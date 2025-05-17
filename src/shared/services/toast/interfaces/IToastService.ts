@@ -26,28 +26,23 @@ export interface IToastService {
   toast: (options: {
     type?: ToastType;
     title?: string;
-    description: string;
     action?: ToastActionElement;
     options?: ToastOptions;
   }) => { id: string; dismiss: () => void; update: (props: any) => void };
   success: (
     title: string,
-    description?: string,
     options?: ToastOptions
   ) => { id: string; dismiss: () => void; update: (props: any) => void };
   error: (
     title: string,
-    description?: string,
     options?: ToastOptions
   ) => { id: string; dismiss: () => void; update: (props: any) => void };
   info: (
     title: string,
-    description?: string,
     options?: ToastOptions
   ) => { id: string; dismiss: () => void; update: (props: any) => void };
   warning: (
     title: string,
-    description?: string,
     options?: ToastOptions
   ) => { id: string; dismiss: () => void; update: (props: any) => void };
   dismiss: (id?: string) => void;

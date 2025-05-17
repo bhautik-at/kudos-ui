@@ -37,8 +37,7 @@ export function useCreateOrganization() {
 
       // Show success message
       toast({
-        title: 'Organization created',
-        description: `Successfully created organization: ${result.name}`,
+        title: `Organization created - Successfully created organization: ${result.name}`,
       });
 
       // Navigate to dashboard with orgId
@@ -51,8 +50,7 @@ export function useCreateOrganization() {
 
       // Show error message
       toast({
-        title: 'Error',
-        description: `Failed to create organization: ${error.message}`,
+        title: `Error - Failed to create organization: ${error.message}`,
         type: 'error',
       });
 

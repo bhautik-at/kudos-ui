@@ -106,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
       httpService.clearAuthToken();
 
       // Show logout in progress toast
-      toastService.info('Logging out...', 'Please wait');
+      toastService.info('Logging out - Please wait');
 
       // Call the Auth service logout
       await logout();
@@ -123,10 +123,9 @@ export const Header: React.FC<HeaderProps> = ({
       console.error('Logout failed:', error);
 
       // Show error toast
-      toastService.error(
-        'Logout failed',
-        error instanceof Error ? error.message : 'An unexpected error occurred'
-      );
+      toastService.error('Logout failed', {
+        duration: 3000,
+      });
 
       // Still clear user data and localStorage even if API fails
       if (typeof window !== 'undefined') {

@@ -86,8 +86,7 @@ export const InviteUsersForm: React.FC = () => {
       form.reset();
     } catch (error) {
       toastService.error(
-        'Failed to invite users',
-        error instanceof Error ? error.message : 'An unexpected error occurred'
+        `Failed to invite users: ${error instanceof Error ? error.message : 'An unexpected error occurred'}`
       );
     }
   };

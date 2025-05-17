@@ -126,6 +126,10 @@ export const KudoCategoriesProvider: React.FC<KudoCategoriesProviderProps> = ({ 
     } catch (err) {
       setError(err instanceof Error ? err : new Error(String(err)));
       console.error('Error fetching categories:', err);
+      toast({
+        title: 'Error - Failed to fetch categories',
+        type: 'error',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -151,8 +155,7 @@ export const KudoCategoriesProvider: React.FC<KudoCategoriesProviderProps> = ({ 
         await createCategoryUseCaseRef.current.execute(categoryDto);
 
         toast({
-          title: 'Success',
-          description: 'Category created successfully',
+          title: 'Success - Category created successfully',
         });
 
         await fetchCategories(); // Refresh the list
@@ -160,8 +163,7 @@ export const KudoCategoriesProvider: React.FC<KudoCategoriesProviderProps> = ({ 
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         toast({
-          title: 'Error',
-          description: `Failed to create category: ${errorMsg}`,
+          title: `Error - Failed to create category: ${errorMsg}`,
           type: 'destructive',
         });
         setError(err instanceof Error ? err : new Error(String(err)));
@@ -193,8 +195,7 @@ export const KudoCategoriesProvider: React.FC<KudoCategoriesProviderProps> = ({ 
         await updateCategoryUseCaseRef.current.execute(id, organizationId, categoryDto);
 
         toast({
-          title: 'Success',
-          description: 'Category updated successfully',
+          title: 'Success - Category updated successfully',
         });
 
         await fetchCategories(); // Refresh the list
@@ -202,8 +203,7 @@ export const KudoCategoriesProvider: React.FC<KudoCategoriesProviderProps> = ({ 
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         toast({
-          title: 'Error',
-          description: `Failed to update category: ${errorMsg}`,
+          title: `Error - Failed to update category: ${errorMsg}`,
           type: 'destructive',
         });
         setError(err instanceof Error ? err : new Error(String(err)));
@@ -232,8 +232,7 @@ export const KudoCategoriesProvider: React.FC<KudoCategoriesProviderProps> = ({ 
         await deleteCategoryUseCaseRef.current.execute(id, organizationId);
 
         toast({
-          title: 'Success',
-          description: 'Category deleted successfully',
+          title: 'Success - Category deleted successfully',
         });
 
         await fetchCategories(); // Refresh the list
@@ -241,8 +240,7 @@ export const KudoCategoriesProvider: React.FC<KudoCategoriesProviderProps> = ({ 
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
         toast({
-          title: 'Error',
-          description: `Failed to delete category: ${errorMsg}`,
+          title: `Error - Failed to delete category: ${errorMsg}`,
           type: 'destructive',
         });
         setError(err instanceof Error ? err : new Error(String(err)));

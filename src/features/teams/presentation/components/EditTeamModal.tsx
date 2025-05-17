@@ -69,7 +69,6 @@ export function EditTeamModalContent({ team, isOpen, onClose, onTeamUpdated }: E
     if (result) {
       toast({
         title: 'Team updated successfully',
-        description: 'Team updated successfully',
       });
       onTeamUpdated();
       onClose();

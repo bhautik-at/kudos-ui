@@ -75,7 +75,7 @@ export const OtpVerificationForm = () => {
       const result = await verifyOtp(currentEmail, values.otp);
 
       if (result.success) {
-        toastService.success('Verification Successful', 'Redirecting...');
+        toastService.success('Verification Successful - Redirecting...');
 
         // Set user in UserContext if user data is present
         if (result.user) {
@@ -105,11 +105,11 @@ export const OtpVerificationForm = () => {
           }
         }, 1000);
       } else {
-        toastService.error('Verification Failed', result.message);
+        toastService.error(`Verification Failed: ${result.message}`);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred';
-      toastService.error('Verification Error', errorMessage);
+      toastService.error(`Verification Error: ${errorMessage}`);
     }
   };
 
@@ -123,9 +123,9 @@ export const OtpVerificationForm = () => {
       const result = await resendOtp(currentEmail);
 
       if (!result.success) {
-        toastService.error('Resend Failed', result.message);
+        toastService.error(`Resend Failed: ${result.message}`);
       } else {
-        toastService.success('OTP Resent', 'A new OTP has been sent to your email');
+        toastService.success('A new OTP has been sent to your email');
         if (result.cooldownSeconds) {
           setCooldownTime(result.cooldownSeconds);
         } else {
@@ -134,8 +134,8 @@ export const OtpVerificationForm = () => {
         }
       }
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to resend OTP';
-      toastService.error('Resend Error', errorMessage);
+      const errorMessage = err.message || 'An unexpected error occurred';
+      toastService.error(`Resend Error: ${errorMessage}`);
       setCanResend(true);
     }
   };

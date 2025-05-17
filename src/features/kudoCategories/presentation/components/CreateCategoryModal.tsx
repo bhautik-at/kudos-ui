@@ -40,8 +40,7 @@ export const CreateCategoryModal: React.FC<CreateCategoryModalProps> = ({ isOpen
       const success = await createCategory(categoryName.trim());
       if (success) {
         toast({
-          title: 'Success',
-          description: 'Category created successfully',
+          title: 'Success - Category created successfully',
         });
         setCategoryName('');
         onClose();

@@ -48,12 +48,15 @@ export const EditCategoryModal: React.FC<EditCategoryModalProps> = ({
       const success = await updateCategory(category.id, categoryName.trim());
       if (success) {
         toast({
-          title: 'Success',
-          description: 'Category updated successfully',
+          title: 'Success - Category updated successfully',
         });
         onClose();
       } else {
         setError('Failed to update category');
+        toast({
+          title: 'Error - Failed to update category',
+          type: 'error',
+        });
       }
     } catch (err) {
       setError('An unexpected error occurred');

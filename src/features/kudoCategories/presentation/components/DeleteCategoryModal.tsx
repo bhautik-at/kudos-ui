@@ -38,12 +38,15 @@ export const DeleteCategoryModal: React.FC<DeleteCategoryModalProps> = ({
       const success = await deleteCategory(category.id);
       if (success) {
         toast({
-          title: 'Success',
-          description: 'Category deleted successfully',
+          title: 'Success - Category deleted successfully',
         });
         onClose();
       } else {
         setError('Failed to delete category');
+        toast({
+          title: 'Error - Failed to delete category',
+          type: 'error',
+        });
       }
     } catch (err) {
       setError('An unexpected error occurred');

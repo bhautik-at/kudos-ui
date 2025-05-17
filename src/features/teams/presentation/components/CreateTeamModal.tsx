@@ -67,7 +67,6 @@ export function CreateTeamModalContent({
     if (result) {
       toast({
         title: 'Team created successfully',
-        description: 'Team created successfully',
       });
       onTeamCreated();
       onClose();

@@ -32,7 +32,6 @@ export function DeleteTeamModal({ team, isOpen, onClose, onTeamDeleted }: Delete
     if (success) {
       toast({
         title: 'Team deleted successfully',
-        description: 'Team deleted successfully',
       });
       onTeamDeleted();
       onClose();
