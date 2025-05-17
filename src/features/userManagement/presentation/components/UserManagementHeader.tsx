@@ -9,17 +9,18 @@ import {
   TooltipTrigger,
 } from '@/shared/components/atoms/Tooltip';
 import { useUserRole } from '@/shared/hooks/useUserRole';
+import { UserRole } from '../../domain/entities/UserRole';
 
 export const UserManagementHeader: React.FC = () => {
   const { openInviteModal } = useUserManagement();
-  const { canInviteUsers } = useUserRole();
+  const { role } = useUserRole();
 
   return (
     <div className="flex items-center justify-between mb-6">
       <h1 className="text-2xl font-bold">User Management</h1>
 
       {/* Only show invite buttons if the user has permission */}
-      {canInviteUsers && (
+      {role === UserRole.TechLeader && (
         <>
           {/* Desktop version with text */}
           <Button onClick={openInviteModal} className="hidden md:flex items-center gap-2">

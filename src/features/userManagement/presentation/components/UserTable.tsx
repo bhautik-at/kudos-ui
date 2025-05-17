@@ -53,7 +53,7 @@ export const UserTable: React.FC = () => {
     deleteUser,
   } = useUserManagement();
 
-  const { canUpdateRoles, canDeleteUsers, isTechLeader, role } = useUserRole();
+  const { role } = useUserRole();
 
   // Local state for deletion confirmation
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
@@ -81,7 +81,7 @@ export const UserTable: React.FC = () => {
 
   // Handle role change
   const handleRoleChange = async (userId: string, role: UserRole) => {
-    if (!canUpdateRoles) {
+    if (role !== UserRole.TechLeader) {
       toastService.error('Permission denied - You do not have permission to change user roles');
       return;
     }
@@ -105,7 +105,7 @@ export const UserTable: React.FC = () => {
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
 
-    if (!canDeleteUsers) {
+    if (role !== UserRole.TechLeader) {
       toastService.error('Permission denied - You do not have permission to delete users');
       setUserToDelete(null);
       return;
@@ -172,7 +172,7 @@ export const UserTable: React.FC = () => {
                   <TableCell className="whitespace-nowrap">{user.email}</TableCell>
                   <TableCell className="whitespace-nowrap">{user.teamName || '-'}</TableCell>
                   <TableCell>
-                    {canUpdateRoles ? (
+                    {role === UserRole.TechLeader ? (
                       <Select
                         value={user.role}
                         onValueChange={value => handleRoleChange(user.id, value as UserRole)}
@@ -205,7 +205,7 @@ export const UserTable: React.FC = () => {
                     )}
                   </TableCell>
                   <TableCell>
-                    {canDeleteUsers ? (
+                    {role === UserRole.TechLeader ? (
                       <Button
                         variant="ghost"
                         size="icon"
