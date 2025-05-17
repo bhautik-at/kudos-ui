@@ -141,7 +141,7 @@ export const OtpVerificationForm = () => {
   };
 
   // If verification is complete and we have a valid invitation, show the invitation form
-  if (verificationComplete && hasInvite && hasOrgId && orgId) {
+  if (hasInvite && hasOrgId && orgId) {
     return (
       <div className="w-full max-w-md mx-auto">
         <AcceptInvitation
@@ -161,71 +161,71 @@ export const OtpVerificationForm = () => {
         />
       </div>
     );
-  }
+  } else {
+    return (
+      <div className="w-full max-w-md mx-auto space-y-6">
+        <div className="space-y-2 text-center">
+          <h1 className="text-3xl font-bold">Verify OTP</h1>
+          <p className="text-gray-500">We've sent a 4-digit code to {currentEmail}</p>
+          <p className="text-sm text-gray-500">
+            {isSignup
+              ? 'Enter the code to complete your registration'
+              : 'Enter the code to login to your account'}
+          </p>
+        </div>
 
-  return (
-    <div className="w-full max-w-md mx-auto space-y-6">
-      <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold">Verify OTP</h1>
-        <p className="text-gray-500">We've sent a 4-digit code to {currentEmail}</p>
-        <p className="text-sm text-gray-500">
-          {isSignup
-            ? 'Enter the code to complete your registration'
-            : 'Enter the code to login to your account'}
-        </p>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="otp"
+              render={({ field }) => (
+                <FormItem>
+                  <Label htmlFor="otp" required>
+                    OTP Code
+                  </Label>
+                  <FormControl>
+                    <Input
+                      id="otp"
+                      placeholder="Enter 4-digit code"
+                      maxLength={4}
+                      error={!!form.formState.errors.otp}
+                      disabled={isAuthLoading}
+                      {...field}
+                      onChange={e => {
+                        // Allow only digits
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        field.onChange(value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit" className="w-full" disabled={isAuthLoading}>
+              {isAuthLoading ? 'Verifying...' : 'Verify OTP'}
+            </Button>
+
+            <div className="text-center mt-4">
+              <p className="text-sm text-gray-500">Didn't receive the code?</p>
+              <button
+                type="button"
+                className={`text-sm mt-1 ${
+                  canResend
+                    ? 'text-blue-600 hover:underline cursor-pointer'
+                    : 'text-gray-400 cursor-not-allowed'
+                }`}
+                onClick={handleResendOtp}
+                disabled={!canResend}
+              >
+                {canResend ? 'Resend OTP' : `Resend OTP in ${cooldownTime} seconds`}
+              </button>
+            </div>
+          </form>
+        </Form>
       </div>
-
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="otp"
-            render={({ field }) => (
-              <FormItem>
-                <Label htmlFor="otp" required>
-                  OTP Code
-                </Label>
-                <FormControl>
-                  <Input
-                    id="otp"
-                    placeholder="Enter 4-digit code"
-                    maxLength={4}
-                    error={!!form.formState.errors.otp}
-                    disabled={isAuthLoading}
-                    {...field}
-                    onChange={e => {
-                      // Allow only digits
-                      const value = e.target.value.replace(/[^0-9]/g, '');
-                      field.onChange(value);
-                    }}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <Button type="submit" className="w-full" disabled={isAuthLoading}>
-            {isAuthLoading ? 'Verifying...' : 'Verify OTP'}
-          </Button>
-
-          <div className="text-center mt-4">
-            <p className="text-sm text-gray-500">Didn't receive the code?</p>
-            <button
-              type="button"
-              className={`text-sm mt-1 ${
-                canResend
-                  ? 'text-blue-600 hover:underline cursor-pointer'
-                  : 'text-gray-400 cursor-not-allowed'
-              }`}
-              onClick={handleResendOtp}
-              disabled={!canResend}
-            >
-              {canResend ? 'Resend OTP' : `Resend OTP in ${cooldownTime} seconds`}
-            </button>
-          </div>
-        </form>
-      </Form>
-    </div>
-  );
+    );
+  }
 };
