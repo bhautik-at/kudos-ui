@@ -64,12 +64,25 @@ export class HttpService implements IHttpService {
   }
 
   /**
+   * Get default request options that should be applied to all requests
+   */
+  private getDefaultOptions(): IHttpOptions {
+    return {
+      withCredentials: true,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+  }
+
+  /**
    * Perform a GET request
    */
   async get<T = any>(url: string, options?: IHttpOptions): Promise<IHttpResponse<T>> {
     return this.request<T>({
       method: 'GET',
       url,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -86,6 +99,7 @@ export class HttpService implements IHttpService {
       method: 'POST',
       url,
       data,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -102,6 +116,7 @@ export class HttpService implements IHttpService {
       method: 'PUT',
       url,
       data,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -118,6 +133,7 @@ export class HttpService implements IHttpService {
       method: 'PATCH',
       url,
       data,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -129,6 +145,7 @@ export class HttpService implements IHttpService {
     return this.request<T>({
       method: 'DELETE',
       url,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -137,7 +154,15 @@ export class HttpService implements IHttpService {
    * Core request method that all other methods use
    */
   async request<T = any>(config: any): Promise<IHttpResponse<T>> {
-    const { method = 'GET', url, data, headers = {}, params, timeout, withCredentials } = config;
+    const {
+      method = 'GET',
+      url,
+      data,
+      headers = {},
+      params,
+      timeout,
+      withCredentials = true,
+    } = config;
 
     // Build URL with any query parameters
     const fullUrl = this.buildUrl(url, params);
