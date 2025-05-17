@@ -17,7 +17,7 @@ export const useUserRole = () => {
 
   // Updated logic to check for any tech leader pattern variations
   const isTechLeader =
-    FORCE_TECH_LEADER ||
+    user?.role === UserRole.TechLeader ||
     user?.email?.includes('lead') ||
     user?.email?.includes('admin') ||
     user?.email?.includes('tech_leader') ||

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@/features/users/presentation/contexts/UserContext';
 import { Button } from '@/shared/components/atoms/Button';
 import { Input } from '@/shared/components/atoms/Input';
 import { Label } from '@/shared/components/atoms/Label';
@@ -30,6 +31,7 @@ type OtpFormValues = z.infer<typeof otpFormSchema>;
 export const OtpVerificationForm = () => {
   const router = useRouter();
   const { verifyOtp, resendOtp, isAuthLoading, clearError, currentEmail, isSignup } = useAuth();
+  const { setUserFromAuth } = useUser();
   const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(false);
 
@@ -72,6 +74,11 @@ export const OtpVerificationForm = () => {
 
       if (result.success) {
         toastService.success('Verification Successful', 'Redirecting...');
+
+        // Set user in UserContext if user data is present
+        if (result.user) {
+          setUserFromAuth(result.user);
+        }
 
         // Store userId in localStorage if available
         if (result.user?.id) {

@@ -124,6 +124,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
+    // Get the role from userData if it exists
+    const userRole = userData.role || null;
+
     // Transform the auth user data to match UserOutputDto
     const transformedUser: UserOutputDto = {
       id: userData.id,
@@ -132,6 +135,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
       lastName: userData.lastName,
       fullName: `${userData.firstName} ${userData.lastName}`,
       isVerified: true, // User is verified if they completed OTP verification
+      role: userRole, // Add the role to the user object
     };
 
     setUser(transformedUser);

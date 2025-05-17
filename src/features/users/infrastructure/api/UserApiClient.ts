@@ -11,6 +11,7 @@ interface UserApiResponse {
     lastName: string;
     fullName: string;
     isVerified: boolean;
+    role: string;
   };
 }
 

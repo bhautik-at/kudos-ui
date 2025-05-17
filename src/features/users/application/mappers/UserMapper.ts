@@ -13,6 +13,7 @@ export class UserMapper {
       lastName: user.lastName,
       fullName: user.fullName,
       isVerified: user.isVerified,
+      role: user.role,
     };
   }
 
@@ -26,6 +27,7 @@ export class UserMapper {
       firstName: responseData.firstName,
       lastName: responseData.lastName,
       isVerified: responseData.isVerified,
+      role: responseData.role,
     });
   }
 }
