@@ -5,4 +5,5 @@ export interface UserOutputDto {
   lastName: string;
   fullName: string;
   isVerified: boolean;
+  role?: string;
 }

@@ -49,13 +49,13 @@ export const SignupForm = ({ invite, orgId }: SignupFormProps) => {
       const result = await signup(values.email, values.firstName, values.lastName);
 
       if (result.success) {
-        toastService.success('Signup Successful', 'OTP has been sent to your email');
+        toastService.success('Signup Successful - OTP has been sent to your email');
       } else {
-        toastService.error('Signup Failed', result.message);
+        toastService.error(`Signup Failed: ${result.message}`);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred';
-      toastService.error('Signup Error', errorMessage);
+      toastService.error(`Signup Error: ${errorMessage}`);
     }
   };
 

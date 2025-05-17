@@ -4,10 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@/features/users/presentation/contexts/UserContext';
 import { Button } from '@/shared/components/atoms/Button';
 import { Input } from '@/shared/components/atoms/Input';
 import { Label } from '@/shared/components/atoms/Label';
 import { toastService } from '@/shared/services/toast';
+import { AcceptInvitation } from '@/features/users/presentation/components/AcceptInvitation';
 import {
   Form,
   FormControl,
@@ -30,8 +32,10 @@ type OtpFormValues = z.infer<typeof otpFormSchema>;
 export const OtpVerificationForm = () => {
   const router = useRouter();
   const { verifyOtp, resendOtp, isAuthLoading, clearError, currentEmail, isSignup } = useAuth();
+  const { setUserFromAuth } = useUser();
   const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(false);
+  const [verificationComplete, setVerificationComplete] = useState<boolean>(false);
 
   // Get invite code from URL
   const invite = router.query.invite as string | undefined;
@@ -71,7 +75,12 @@ export const OtpVerificationForm = () => {
       const result = await verifyOtp(currentEmail, values.otp);
 
       if (result.success) {
-        toastService.success('Verification Successful', 'Redirecting...');
+        toastService.success('Verification Successful - Redirecting...');
+
+        // Set user in UserContext if user data is present
+        if (result.user) {
+          setUserFromAuth(result.user);
+        }
 
         // Store userId in localStorage if available
         if (result.user?.id) {
@@ -81,15 +90,9 @@ export const OtpVerificationForm = () => {
         // Add a short delay to ensure auth state is updated
         // and toast is displayed before navigation
         setTimeout(() => {
-          // If we have invite or orgId, always redirect to dashboard with those params
-          if (hasInvite || hasOrgId) {
-            const queryParams = new URLSearchParams();
-            if (invite) queryParams.append('invite', invite);
-            if (orgId) queryParams.append('orgId', orgId);
-
-            const queryString = queryParams.toString();
-            const redirectUrl = `/dashboard?${queryString}`;
-            router.push(redirectUrl);
+          // If we have invite or orgId, show the invitation acceptance form directly
+          if (hasInvite && hasOrgId && orgId) {
+            setVerificationComplete(true);
           } else {
             // No invite or orgId
             if (isSignup) {
@@ -102,11 +105,11 @@ export const OtpVerificationForm = () => {
           }
         }, 1000);
       } else {
-        toastService.error('Verification Failed', result.message);
+        toastService.error(`Verification Failed: ${result.message}`);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred';
-      toastService.error('Verification Error', errorMessage);
+      toastService.error(`Verification Error: ${errorMessage}`);
     }
   };
 
@@ -120,9 +123,9 @@ export const OtpVerificationForm = () => {
       const result = await resendOtp(currentEmail);
 
       if (!result.success) {
-        toastService.error('Resend Failed', result.message);
+        toastService.error(`Resend Failed: ${result.message}`);
       } else {
-        toastService.success('OTP Resent', 'A new OTP has been sent to your email');
+        toastService.success('A new OTP has been sent to your email');
         if (result.cooldownSeconds) {
           setCooldownTime(result.cooldownSeconds);
         } else {
@@ -131,12 +134,34 @@ export const OtpVerificationForm = () => {
         }
       }
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to resend OTP';
-      toastService.error('Resend Error', errorMessage);
+      const errorMessage = err.message || 'An unexpected error occurred';
+      toastService.error(`Resend Error: ${errorMessage}`);
       setCanResend(true);
     }
   };
 
+  // If verification is complete and we have a valid invitation, show the invitation form
+  if (verificationComplete && hasInvite && hasOrgId && orgId) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <AcceptInvitation
+          organizationId={orgId}
+          autoAccept={false}
+          onSuccess={acceptedOrgId => {
+            // Navigate to dashboard with orgId parameter
+            router.push(`/dashboard?orgId=${acceptedOrgId}`);
+          }}
+          onError={error => {
+            if (isSignup) {
+              router.push('/organization');
+            } else {
+              router.push('/organizations');
+            }
+          }}
+        />
+      </div>
+    );
+  }
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="space-y-2 text-center">

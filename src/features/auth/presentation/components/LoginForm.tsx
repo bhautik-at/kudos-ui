@@ -45,15 +45,15 @@ export const LoginForm = ({ invite, orgId }: LoginFormProps) => {
       const result = await login(values.email);
 
       if (result.success) {
-        toastService.success('Login Initiated', 'OTP has been sent to your email', {
+        toastService.success('OTP has been sent to your email', {
           duration: 3000,
         });
       } else {
-        toastService.error('Login Failed', result.message, { duration: 3000 });
+        toastService.error(result.message, { duration: 3000 });
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred';
-      toastService.error('Login Error', errorMessage, { duration: 3000 });
+      toastService.error(errorMessage, { duration: 3000 });
     }
   };
 

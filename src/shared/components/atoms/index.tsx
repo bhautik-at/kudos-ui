@@ -7,3 +7,6 @@ export * from './Sheet';
 export * from './Select';
 export * from './Label';
 export * from './Spinner';
+export * from './Card';
+export * from './Dialog';
+export * from './Checkbox';

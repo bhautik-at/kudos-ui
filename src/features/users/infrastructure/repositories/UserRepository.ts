@@ -39,4 +39,24 @@ export class UserRepository implements IUserRepository {
       throw error;
     }
   }
+
+  /**
+   * Accepts an organization invitation for the current user
+   * @param organizationId The ID of the organization to accept invitation for
+   * @returns A Promise resolving to the organization ID on success
+   * @throws ApiError if there's an error accepting the invitation
+   */
+  async acceptInvitation(organizationId: string): Promise<string> {
+    try {
+      const result = await this.apiClient.acceptInvitation(organizationId);
+      return result.organizationId;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+
+      // Rethrow any other errors
+      throw error;
+    }
+  }
 }

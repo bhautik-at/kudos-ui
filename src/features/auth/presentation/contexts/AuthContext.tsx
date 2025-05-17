@@ -14,6 +14,7 @@ interface AuthUser {
   email: string;
   firstName: string;
   lastName: string;
+  role: string;
 }
 
 interface AuthContextProps {
@@ -47,6 +48,7 @@ interface AuthContextProps {
     success: boolean;
     message: string;
     token?: string;
+    user?: AuthUser;
   }>;
   logout: () => Promise<void>;
   clearError: () => void;

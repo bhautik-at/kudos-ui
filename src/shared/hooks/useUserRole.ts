@@ -8,16 +8,9 @@ import { UserRole } from '@/features/userManagement/domain/entities/UserRole';
 export const useUserRole = () => {
   const { user } = useUser();
 
-  // DEVELOPMENT OVERRIDE: Set to true to force tech leader permissions for testing
-  const FORCE_TECH_LEADER = true;
-
-  // For now, we're hard-coding the tech leader role check
-  // In a real application, this would come from the user object itself
-  // This is a temporary solution until the backend provides role information
-
   // Updated logic to check for any tech leader pattern variations
   const isTechLeader =
-    FORCE_TECH_LEADER ||
+    user?.role === UserRole.TechLeader ||
     user?.email?.includes('lead') ||
     user?.email?.includes('admin') ||
     user?.email?.includes('tech_leader') ||
@@ -31,10 +24,5 @@ export const useUserRole = () => {
 
     // Full role value (for cases where you need the exact role enum)
     role: isTechLeader ? UserRole.TechLeader : UserRole.Member,
-
-    // Whether the user can perform certain actions
-    canInviteUsers: isTechLeader,
-    canUpdateRoles: isTechLeader,
-    canDeleteUsers: isTechLeader,
   };
 };
