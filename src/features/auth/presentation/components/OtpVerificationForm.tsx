@@ -9,6 +9,7 @@ import { Button } from '@/shared/components/atoms/Button';
 import { Input } from '@/shared/components/atoms/Input';
 import { Label } from '@/shared/components/atoms/Label';
 import { toastService } from '@/shared/services/toast';
+import { AcceptInvitation } from '@/features/users/presentation/components/AcceptInvitation';
 import {
   Form,
   FormControl,
@@ -34,6 +35,7 @@ export const OtpVerificationForm = () => {
   const { setUserFromAuth } = useUser();
   const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(false);
+  const [verificationComplete, setVerificationComplete] = useState<boolean>(false);
 
   // Get invite code from URL
   const invite = router.query.invite as string | undefined;
@@ -88,15 +90,9 @@ export const OtpVerificationForm = () => {
         // Add a short delay to ensure auth state is updated
         // and toast is displayed before navigation
         setTimeout(() => {
-          // If we have invite or orgId, always redirect to dashboard with those params
-          if (hasInvite || hasOrgId) {
-            const queryParams = new URLSearchParams();
-            if (invite) queryParams.append('invite', invite);
-            if (orgId) queryParams.append('orgId', orgId);
-
-            const queryString = queryParams.toString();
-            const redirectUrl = `/dashboard?${queryString}`;
-            router.push(redirectUrl);
+          // If we have invite or orgId, show the invitation acceptance form directly
+          if (hasInvite && hasOrgId && orgId) {
+            setVerificationComplete(true);
           } else {
             // No invite or orgId
             if (isSignup) {
@@ -143,6 +139,29 @@ export const OtpVerificationForm = () => {
       setCanResend(true);
     }
   };
+
+  // If verification is complete and we have a valid invitation, show the invitation form
+  if (verificationComplete && hasInvite && hasOrgId && orgId) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <AcceptInvitation
+          organizationId={orgId}
+          autoAccept={false}
+          onSuccess={acceptedOrgId => {
+            // Navigate to dashboard with orgId parameter
+            router.push(`/dashboard?orgId=${acceptedOrgId}`);
+          }}
+          onError={error => {
+            if (isSignup) {
+              router.push('/organization');
+            } else {
+              router.push('/organizations');
+            }
+          }}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
