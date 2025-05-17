@@ -1,0 +1,84 @@
+---
+description: 
+globs: src/pages/**/*.tsx
+alwaysApply: false
+---
+# Page Component Architecture
+
+## Core Pattern
+
+In this clean architecture, pages should follow a strict pattern:
+
+1. Pages should be minimal and only responsible for:
+   - Meta tags (SEO, title, description)
+   - Calling a template component
+   - Passing necessary data to the template
+
+2. Pages should NOT contain:
+   - Direct business logic
+   - Complex component composition
+   - State management
+
+## Implementation
+
+Pages in the `/pages` directory should only import templates from shared presentation templates, which then compose other components:
+
+```typescript
+// pages/some-page.tsx
+import type { NextPage } from 'next';
+import Head from 'next/head';
+import { SomePageTemplate } from '@/shared/presentation/templates/SomePageTemplate';
+
+const SomePage: NextPage = () => {
+  return (
+    <>
+      <Head>
+        <title>Some Page | My App</title>
+        <meta name="description" content="Description for Some Page" />
+      </Head>
+      <SomePageTemplate />
+    </>
+  );
+};
+
+export default SomePage;
+```
+
+## Template Components
+
+Templates should compose organisms, molecules, and atoms to build the complete page UI:
+
+```typescript
+// shared/presentation/templates/SomePageTemplate.tsx
+import { MainLayout } from '@/shared/presentation/templates/MainLayout';
+import { SomeFeatureComponent } from '@/features/some-feature/presentation/components/SomeFeatureComponent';
+import { AnotherFeatureComponent } from '@/features/another-feature/presentation/components/AnotherFeatureComponent';
+import { Card } from '@/shared/presentation/components/molecules/Card';
+
+export function SomePageTemplate() {
+  return (
+    <MainLayout>
+      <div className="container mx-auto py-10">
+        <h1 className="text-2xl font-bold mb-6">Some Page Title</h1>
+        
+        <Card className="mb-6">
+          <SomeFeatureComponent />
+        </Card>
+        
+        <AnotherFeatureComponent />
+      </div>
+    </MainLayout>
+  );
+}
+```
+
+## Benefits
+
+This architecture provides several advantages:
+
+1. Clear separation of concerns
+2. Reusable templates across pages
+3. Easier testing of complex UI compositions
+4. Consistent page structure
+5. Centralized layout management
+6. Better component modularity

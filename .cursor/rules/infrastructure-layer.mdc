@@ -1,0 +1,253 @@
+---
+description: 
+globs: src/features/*/infrastructure/**/*
+alwaysApply: false
+---
+# Infrastructure Layer
+
+The Infrastructure Layer implements interfaces defined in the domain layer and handles external dependencies such as APIs, databases, and third-party services.
+
+## Structure
+
+```
+<feature>/infrastructure/
+├── api/                # API clients
+│   ├── UserApiClient.ts
+│   └── UserApiClient.test.ts
+└── repositories/       # Repository implementations
+    ├── UserRepository.ts
+    └── UserRepository.test.ts
+```
+
+Shared infrastructure components:
+
+```
+shared/infrastructure/
+└── storage/            # Shared storage implementations
+    ├── LocalStorage.ts
+    └── IndexedDBStorage.ts
+```
+
+## Rules
+
+1. **Repositories** should:
+   - Implement domain interfaces
+   - Handle data persistence details
+   - Hide database/API implementation details
+   - Translate between domain entities and data source formats
+   - Return domain entities to the application layer
+
+2. **API Clients** should:
+   - Handle HTTP requests to external services
+   - Manage authentication and headers
+   - Serialize/deserialize data
+   - Handle error responses
+   - Abstract API-specific details
+
+3. **Storage** implementations should:
+   - Provide persistence mechanisms
+   - Be shared across features when appropriate
+   - Handle caching if needed
+   - Manage data serialization/deserialization
+
+## Example Repository
+
+```typescript
+// features/users/infrastructure/repositories/UserRepository.ts
+import { User } from '../../domain/entities/User';
+import { UserRepository as UserRepositoryInterface } from '../../domain/interfaces/UserRepository';
+import { UserApiClient } from '../api/UserApiClient';
+
+export class UserRepository implements UserRepositoryInterface {
+  constructor(private apiClient: UserApiClient) {}
+
+  async findById(id: string): Promise<User | null> {
+    try {
+      const userData = await this.apiClient.getUser(id);
+      if (!userData) return null;
+      
+      return new User({
+        id: userData.id,
+        username: userData.username,
+        email: userData.email,
+        firstName: userData.first_name,
+        lastName: userData.last_name,
+        password: '',  // Password is not returned from API
+        role: {
+          id: userData.role_id,
+          name: userData.role_name
+        },
+        createdAt: new Date(userData.created_at)
+      });
+    } catch (error) {
+      console.error('Error fetching user:', error);
+      return null;
+    }
+  }
+
+  async findByEmail(email: string): Promise<User | null> {
+    try {
+      const userData = await this.apiClient.getUserByEmail(email);
+      if (!userData) return null;
+      
+      return new User({
+        id: userData.id,
+        username: userData.username,
+        email: userData.email,
+        firstName: userData.first_name,
+        lastName: userData.last_name,
+        password: '',
+        role: {
+          id: userData.role_id,
+          name: userData.role_name
+        },
+        createdAt: new Date(userData.created_at)
+      });
+    } catch (error) {
+      console.error('Error fetching user by email:', error);
+      return null;
+    }
+  }
+
+  async emailExists(email: string): Promise<boolean> {
+    try {
+      return await this.apiClient.checkEmailExists(email);
+    } catch (error) {
+      console.error('Error checking email existence:', error);
+      return false;
+    }
+  }
+
+  async save(user: User): Promise<User> {
+    try {
+      const userData = await this.apiClient.createUser({
+        username: user.username,
+        email: user.email,
+        first_name: user.firstName,
+        last_name: user.lastName,
+        password: user.passwordHash,
+        role_id: user.role.id
+      });
+      
+      return new User({
+        id: userData.id,
+        username: userData.username,
+        email: userData.email,
+        firstName: userData.first_name,
+        lastName: userData.last_name,
+        password: '',
+        role: {
+          id: userData.role_id,
+          name: userData.role_name
+        },
+        createdAt: new Date(userData.created_at)
+      });
+    } catch (error) {
+      console.error('Error saving user:', error);
+      throw new Error('Failed to save user');
+    }
+  }
+
+  async delete(id: string): Promise<void> {
+    try {
+      await this.apiClient.deleteUser(id);
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      throw new Error('Failed to delete user');
+    }
+  }
+}
+```
+
+## Example API Client
+
+```typescript
+// features/users/infrastructure/api/UserApiClient.ts
+interface UserApiData {
+  id: string;
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  password?: string;
+  role_id: string;
+  role_name: string;
+  created_at: string;
+}
+
+interface CreateUserData {
+  username: string;
+  email: string;
+  first_name: string;
+  last_name: string;
+  password: string;
+  role_id: string;
+}
+
+export class UserApiClient {
+  private baseUrl: string;
+  
+  constructor(baseUrl = '/api') {
+    this.baseUrl = baseUrl;
+  }
+  
+  async getUser(id: string): Promise<UserApiData | null> {
+    const response = await fetch(`${this.baseUrl}/users/${id}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return await response.json();
+  }
+  
+  async getUserByEmail(email: string): Promise<UserApiData | null> {
+    const response = await fetch(`${this.baseUrl}/users/by-email/${email}`);
+    
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return await response.json();
+  }
+  
+  async checkEmailExists(email: string): Promise<boolean> {
+    const response = await fetch(`${this.baseUrl}/users/email-exists?email=${encodeURIComponent(email)}`);
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    return data.exists;
+  }
+  
+  async createUser(userData: CreateUserData): Promise<UserApiData> {
+    const response = await fetch(`${this.baseUrl}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+    
+    return await response.json();
+  }
+  
+  async deleteUser(id: string): Promise<void> {
+    const response = await fetch(`${this.baseUrl}/users/${id}`, {
+      method: 'DELETE'
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API error: ${response.status}`);
+    }
+  }
+}
+```

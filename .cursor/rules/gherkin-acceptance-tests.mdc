@@ -1,0 +1,120 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Gherkin Acceptance Testing Guidelines
+
+## File Structure
+- Feature files should be stored in `features/` directory
+- Each feature file should have `.feature` extension
+- Step definitions should be in `features/step_definitions/`
+- Support files (hooks, world) should be in `features/support/`
+
+## Feature File Structure
+```gherkin
+Feature: Feature Name
+As a [role]
+I want to [action]
+So that [benefit]
+
+Background:
+Given [common precondition]
+And [another common precondition]
+
+Scenario: Scenario name
+Given [initial context]
+When [action]
+Then [expected outcome]
+```
+
+## Best Practices
+1. Each scenario should:
+- Test one specific behavior
+- Follow Given-When-Then structure
+- Be independent of other scenarios
+- Have clear, descriptive names
+
+2. Given steps should:
+- Set up the initial state
+- Include all necessary preconditions
+- Be specific and clear
+
+3. When steps should:
+- Describe a single action
+- Be atomic and focused
+- Use active voice
+
+4. Then steps should:
+- Verify the outcome
+- Be specific about expectations
+- Include assertions
+
+5. Background section should:
+- Contain common preconditions
+- Be used for setup steps shared across scenarios
+- Be kept minimal
+
+## Example Structure
+```gherkin
+Feature: User Authentication
+As a user
+I want to authenticate myself
+So that I can access secure content
+
+Background:
+Given I am on the login page
+And the page title is "Login"
+
+Scenario: Successful login
+Given I have valid credentials
+When I enter my credentials
+Then I should be logged in
+```
+
+## Common Anti-patterns to Avoid
+1. Don't combine multiple behaviors in one scenario
+2. Don't use implementation details in steps
+3. Don't make scenarios dependent on each other
+4. Don't use vague or ambiguous step definitions
+5. Don't include UI details unless necessary
+
+## Step Definition Guidelines
+1. Keep step definitions focused and simple
+2. Use regular expressions for flexibility
+3. Implement proper error handling
+4. Use page objects for UI interactions
+5. Keep business logic in step definitions
+
+## Tags Usage
+```gherkin
+@smoke @login
+Scenario: Basic login functionality
+Given I am on the login page
+When I enter valid credentials
+Then I should be logged in
+```
+
+## Data Tables
+```gherkin
+Scenario: Multiple user logins
+Given the following users exist:
+| email | password |
+| user1@test.com | pass1 |
+| user2@test.com | pass2 |
+When I login with "<email>" and "<password>"
+Then I should be logged in
+```
+
+## Scenario Outlines
+```gherkin
+Scenario Outline: Login with different credentials
+Given I am on the login page
+When I enter "<email>" and "<password>"
+Then I should see "<message>"
+
+Examples:
+| email | password | message |
+| valid@test.com | correct | Welcome |
+| invalid@test.com| wrong | Invalid login |
+```

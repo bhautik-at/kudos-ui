@@ -1,0 +1,302 @@
+---
+description: 
+globs: src/shared/components/**/*,src/components/ui/**/*
+alwaysApply: false
+---
+# shadcn/ui Component Installation and Usage
+
+This rule outlines how to install and use shadcn/ui components in the clean architecture.
+
+## Installation Process
+
+1. Install a new shadcn/ui component using the CLI:
+
+```bash
+npx shadcn@latest add <component-name>
+# Example
+npx shadcn@latest add button
+```
+
+2. The component will be installed in the `src/components/ui` directory as per the shadcn/ui default configuration.
+
+3. Create a folder for the component and wrapper components in the shared components atomic structure:
+
+```
+src/
+└── shared/
+    └── components/
+        └── atoms/
+            └── button/  # Folder for button component
+                ├── index.tsx      # Main component wrapper 
+                └── button.test.tsx  # Tests for the component
+```
+
+## Wrapper Component Pattern
+
+Each shadcn/ui component should have its own folder with an index.tsx wrapper in the shared components layer that follows this pattern:
+
+```typescript
+// src/shared/components/atoms/button/index.tsx
+import { forwardRef } from 'react';
+import { Button as ShadcnButton } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { ComponentPropsWithoutRef, ElementRef } from 'react';
+
+export type ButtonProps = ComponentPropsWithoutRef<typeof ShadcnButton>;
+
+export const Button = forwardRef<ElementRef<typeof ShadcnButton>, ButtonProps>((props, ref) => {
+  return <ShadcnButton ref={ref} {...props} />;
+});
+
+Button.displayName = 'Button';
+```
+
+## Integration with Existing Components
+
+When integrating with existing components, always import from the wrapper component, never directly from the shadcn/ui component:
+
+```typescript
+// DO THIS
+import { Button } from '@/shared/components/atoms/button';
+// or
+import { Button } from '@/shared/components/atoms';
+
+// DON'T DO THIS
+import { Button } from '@/components/ui/button';
+```
+
+Be sure to re-export the component in the atoms/index.ts file:
+
+```typescript
+// src/shared/components/atoms/index.ts
+export * from './button';
+export * from './checkbox';
+// etc.
+```
+
+## Customization
+
+Any customization should be done in the wrapper component, not by modifying the shadcn/ui components directly:
+
+```typescript
+// src/shared/components/atoms/button/index.tsx
+import { forwardRef } from 'react';
+import { Button as ShadcnButton } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import type { ComponentPropsWithoutRef, ElementRef } from 'react';
+
+export type ButtonProps = Omit<ComponentPropsWithoutRef<typeof ShadcnButton>, 'variant'> & {
+  variant?: 'primary' | 'secondary' | 'danger' | 'success' | string;
+};
+
+export const Button = forwardRef<ElementRef<typeof ShadcnButton>, ButtonProps>(
+  ({ className, variant = 'default', ...props }, ref) => {
+    // Map custom variants to shadcn variants or custom styles
+    const variantClassMap = {
+      primary: 'bg-blue-600 hover:bg-blue-700 text-white',
+      danger: 'bg-red-600 hover:bg-red-700 text-white',
+      success: 'bg-green-600 hover:bg-green-700 text-white',
+    };
+    
+    // For custom variants, use our mapping; for standard variants, pass through
+    const isCustomVariant = ['primary', 'danger', 'success'].includes(variant);
+    const variantClass = isCustomVariant ? variantClassMap[variant as keyof typeof variantClassMap] : '';
+    const shadcnVariant = isCustomVariant ? undefined : variant;
+    
+    return (
+      <ShadcnButton 
+        ref={ref} 
+        className={cn(variantClass, className)} 
+        variant={shadcnVariant as any}
+        {...props} 
+      />
+    );
+  }
+);
+
+Button.displayName = 'Button';
+```
+
+## Mandatory Testing for Wrapper Components
+
+All wrapper components in the atoms, molecules, and organisms layers **MUST** have corresponding tests implemented and run. This is a mandatory requirement:
+
+1. Create a test file with the same name as the component file:
+   - For `src/shared/components/atoms/button/index.tsx`, create `src/shared/components/atoms/button/button.test.tsx`
+
+2. Test file must be created and tests run immediately after creating the wrapper component.
+
+3. Each test file should include at minimum the following test cases:
+   - Rendering test: Does the component render correctly?
+   - Props test: Are props passed through correctly to the underlying component?
+   - Custom behavior test: Does any custom logic or styling work as expected?
+   - Accessibility test: Does the component meet basic accessibility requirements?
+
+4. Run the tests after implementation:
+
+```bash
+# Run tests for the specific component
+npm test -- --testPathPattern=src/shared/components/atoms/button
+
+# Ensure the test is passing before committing
+```
+
+5. Tests must be run and passing before the component is considered complete.
+
+Here's a complete example of a required test file:
+
+```typescript
+// src/shared/components/atoms/button/button.test.tsx
+import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Button } from './index';
+
+describe('Button Component', () => {
+  // Rendering test
+  it('renders children correctly', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByRole('button')).toHaveTextContent('Click me');
+  });
+
+  // Props test
+  it('forwards props to the underlying button', () => {
+    render(<Button disabled data-testid="test-button">Disabled Button</Button>);
+    const button = screen.getByTestId('test-button');
+    expect(button).toBeDisabled();
+  });
+
+  // Custom behavior test
+  it('applies custom variant classes', () => {
+    render(<Button variant="primary">Primary Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('bg-blue-600');
+  });
+
+  // Custom behavior test
+  it('passes through standard shadcn variants', () => {
+    render(<Button variant="outline">Outline Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveAttribute('data-variant', 'outline');
+  });
+
+  // Interaction test
+  it('handles click events', async () => {
+    const handleClick = jest.fn();
+    render(<Button onClick={handleClick}>Click me</Button>);
+    
+    await userEvent.click(screen.getByRole('button'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+
+  // Accessibility test
+  it('has no accessibility violations', async () => {
+    const { container } = render(<Button>Accessible Button</Button>);
+    
+    // If using axe-core for accessibility testing
+    // const results = await axe(container);
+    // expect(results).toHaveNoViolations();
+    
+    // Basic a11y checks
+    const button = screen.getByRole('button');
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveAttribute('type');
+  });
+});
+```
+
+## Testing Wrapper Components
+
+You should test your wrapper components to ensure they pass through props correctly and apply any custom behavior:
+
+```typescript
+// src/shared/components/atoms/button/button.test.tsx
+import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react';
+import { Button } from './index';
+
+describe('Button', () => {
+  it('renders children correctly', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByRole('button')).toHaveTextContent('Click me');
+  });
+
+  it('applies custom variant classes', () => {
+    render(<Button variant="primary">Primary Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveClass('bg-blue-600');
+  });
+
+  it('passes through standard shadcn variants', () => {
+    render(<Button variant="outline">Outline Button</Button>);
+    const button = screen.getByRole('button');
+    expect(button).toHaveAttribute('data-variant', 'outline');
+  });
+
+  it('forwards additional props', () => {
+    render(<Button disabled>Disabled Button</Button>);
+    expect(screen.getByRole('button')).toBeDisabled();
+  });
+});
+```
+
+## Documentation
+
+Each component should include a README.md with usage examples and prop documentation:
+
+```markdown
+# Button Component
+
+A wrapper for the shadcn/ui button component following our atomic design pattern.
+
+## Usage
+
+Import the component from the shared components instead of directly from shadcn/ui:
+
+```tsx
+// Correct usage
+import { Button } from '@/shared/components/atoms/button';
+
+// Or through the atoms index
+import { Button } from '@/shared/components/atoms';
+
+// Don't use the direct import
+// ❌ import { Button } from '@/components/ui/button';
+```
+
+## Example
+
+```tsx
+<Button variant="primary">Click me</Button>
+```
+
+## Props
+
+The component accepts all props from the original shadcn/ui button component, plus:
+
+- `variant`: Can be 'primary', 'secondary', 'danger', 'success' or any standard shadcn variant
+```
+
+## Component Configuration
+
+Make sure your components.json is properly configured to output components to the src/components directory and hooks to src/components/hooks:
+
+```json
+{
+  "$schema": "https://ui.shadcn.com/schema.json",
+  "style": "default",
+  "rsc": false,
+  "tailwind": {
+    "config": "tailwind.config.js",
+    "css": "src/styles/globals.css",
+    "baseColor": "slate",
+    "cssVariables": true
+  },
+  "aliases": {
+    "components": "@/components",
+    "utils": "@/lib/utils",
+    "ui": "@/components/ui",
+    "hooks": "@/components/hooks"
+  }
+}
+```

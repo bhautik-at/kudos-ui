@@ -1,0 +1,137 @@
+---
+description: 
+globs: src/features/*/application/**/*
+alwaysApply: false
+---
+# Application Layer
+
+The Application Layer orchestrates the flow of data between the presentation and domain layers, containing DTOs, mappers, and use cases.
+
+## Structure
+
+```
+<feature>/application/
+├── dtos/             # Data Transfer Objects
+│   ├── InputDto.ts
+│   └── OutputDto.ts
+├── mappers/          # Object mappers
+│   ├── EntityToDtoMapper.ts
+│   ├── EntityToDtoMapper.test.ts
+│   ├── DtoToEntityMapper.ts
+│   └── DtoToEntityMapper.test.ts
+├── useCases/         # Business logic
+│   ├── CreateUserUseCase.ts
+│   └── CreateUserUseCase.test.ts
+└── commands/         # Command objects
+    └── CreateUserCommand.ts
+```
+
+## Rules
+
+1. **DTOs (Data Transfer Objects)** should:
+   - Be simple data structures (interfaces/types)
+   - Only contain primitive types, arrays, and other DTOs
+   - Define specific data structures for inputs/outputs
+   - Not contain business logic
+   - Serve as a contract between layers
+
+2. **Mappers** should:
+   - Convert between domain entities and DTOs
+   - Be stateless utility classes
+   - Have static methods for conversion
+   - Handle data transformation logic
+   - Protect domain logic from external concerns
+
+3. **Use Cases** should:
+   - Implement one specific business operation
+   - Accept DTOs as input
+   - Return DTOs as output
+   - Orchestrate domain entities and repositories
+   - Follow single responsibility principle
+   - Be easily testable
+
+4. **Commands** should:
+   - Represent a specific action to be performed
+   - Be immutable data structures
+   - Contain all data needed for execution
+   - Validate input data if necessary
+
+## Example DTO
+
+```typescript
+// features/users/application/dtos/CreateUserInputDto.ts
+export interface CreateUserInputDto {
+  username: string;
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+}
+
+// features/users/application/dtos/UserOutputDto.ts
+export interface UserOutputDto {
+  id: string;
+  username: string;
+  email: string;
+  displayName: string;
+  role: string;
+  createdAt: string;
+}
+```
+
+## Example Mapper
+
+```typescript
+// features/users/application/mappers/UserToOutputDtoMapper.ts
+import { User } from '../../domain/entities/User';
+import { UserOutputDto } from '../dtos/UserOutputDto';
+
+export class UserToOutputDtoMapper {
+  static toDto(user: User): UserOutputDto {
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      displayName: `${user.firstName} ${user.lastName}`,
+      role: user.role.name,
+      createdAt: user.createdAt.toISOString(),
+    };
+  }
+
+  static toDtoList(users: User[]): UserOutputDto[] {
+    return users.map(user => this.toDto(user));
+  }
+}
+```
+
+## Example Use Case
+
+```typescript
+// features/users/application/useCases/CreateUserUseCase.ts
+import { UserRepository } from '../../domain/interfaces/UserRepository';
+import { EmailAlreadyExistsError } from '../../domain/errors/EmailAlreadyExistsError';
+import { CreateUserInputDto } from '../dtos/CreateUserInputDto';
+import { UserOutputDto } from '../dtos/UserOutputDto';
+import { InputDtoToUserMapper } from '../mappers/InputDtoToUserMapper';
+import { UserToOutputDtoMapper } from '../mappers/UserToOutputDtoMapper';
+
+export class CreateUserUseCase {
+  constructor(private userRepository: UserRepository) {}
+
+  async execute(inputDto: CreateUserInputDto): Promise<UserOutputDto> {
+    // Convert input DTO to domain entity
+    const user = InputDtoToUserMapper.toEntity(inputDto);
+
+    // Business logic
+    if (await this.userRepository.emailExists(user.email)) {
+      throw new EmailAlreadyExistsError();
+    }
+
+    // Save entity
+    const savedUser = await this.userRepository.save(user);
+
+    // Convert domain entity to output DTO
+    return UserToOutputDtoMapper.toDto(savedUser);
+  }
+}
+```

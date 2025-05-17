@@ -1,0 +1,129 @@
+---
+description: 
+globs: src/features/*/domain/**/*
+alwaysApply: false
+---
+# Domain Layer
+
+The Domain Layer is the core of the application, containing business logic and rules. It should be independent of any external frameworks or technologies.
+
+## Structure
+
+```
+<feature>/domain/
+├── entities/       # Business objects
+│   ├── User.ts     # Domain entity
+│   └── User.test.ts
+├── interfaces/     # Core contracts
+│   └── UserRepository.ts
+└── errors/         # Custom error types
+    └── EmailAlreadyExistsError.ts
+```
+
+## Rules
+
+1. **Entities** should:
+   - Be simple classes or interfaces
+   - Encapsulate business rules and validations
+   - Not depend on any external systems
+   - Have immutable properties (use readonly)
+   - Contain domain-specific logic
+
+2. **Interfaces** should:
+   - Define contracts for repositories and services
+   - Not contain implementation details
+   - Use domain entities as parameters/return types
+
+3. **Error types** should:
+   - Extend Error class
+   - Have descriptive names
+   - Include relevant error details
+
+## Example Entity
+
+```typescript
+// features/users/domain/entities/User.ts
+import { Role } from './Role';
+
+interface UserProps {
+  id?: string;
+  username: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
+  role?: Role;
+  createdAt?: Date;
+}
+
+export class User {
+  readonly id?: string;
+  readonly username: string;
+  readonly email: string;
+  readonly firstName: string;
+  readonly lastName: string;
+  readonly passwordHash: string;
+  readonly role: Role;
+  readonly createdAt: Date;
+
+  constructor(props: UserProps) {
+    this.id = props.id;
+    this.username = props.username;
+    this.email = props.email.toLowerCase();
+    this.firstName = props.firstName;
+    this.lastName = props.lastName;
+    this.passwordHash = this.hashPassword(props.password);
+    this.role = props.role || { id: '2', name: 'user' };
+    this.createdAt = props.createdAt || new Date();
+
+    this.validate();
+  }
+
+  private validate(): void {
+    if (!this.email.includes('@')) {
+      throw new Error('Invalid email format');
+    }
+
+    if (this.username.length < 3) {
+      throw new Error('Username must be at least 3 characters long');
+    }
+  }
+
+  private hashPassword(password: string): string {
+    // In a real implementation, use a proper hashing library
+    return `hashed_${password}`;
+  }
+
+  get fullName(): string {
+    return `${this.firstName} ${this.lastName}`;
+  }
+}
+```
+
+## Example Interface
+
+```typescript
+// features/users/domain/interfaces/UserRepository.ts
+import { User } from '../entities/User';
+
+export interface UserRepository {
+  findById(id: string): Promise<User | null>;
+  findByEmail(email: string): Promise<User | null>;
+  emailExists(email: string): Promise<boolean>;
+  save(user: User): Promise<User>;
+  delete(id: string): Promise<void>;
+}
+```
+
+## Example Error
+
+```typescript
+// features/users/domain/errors/EmailAlreadyExistsError.ts
+export class EmailAlreadyExistsError extends Error {
+  constructor(email?: string) {
+    super(email ? `Email ${email} already exists` : 'Email already exists');
+    this.name = 'EmailAlreadyExistsError';
+  }
+}
+```
+

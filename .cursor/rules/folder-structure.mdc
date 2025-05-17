@@ -1,0 +1,205 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Clean Frontend Architecture Folder Structure
+
+This document outlines the folder structure for the Clean Architecture frontend project using Next.js Pages Router.
+
+## Complete Folder Structure
+
+```
+/
+├── public/               # Static assets
+├── src/                  # Source code
+│   ├── pages/            # Next.js Pages Router
+│   │   ├── api/          # API routes
+│   │   │   └── <feature>/
+│   │   └── [...routes]   # Page components
+│   │
+│   ├── features/         # Feature modules (domain-based)
+│   │   └── <feature>/    # e.g., users, products, auth
+│   │       ├── domain/   # Domain Layer
+│   │       │   ├── entities/     # Business objects
+│   │       │   │   ├── User.ts
+│   │       │   │   └── User.test.ts
+│   │       │   ├── interfaces/   # Core contracts
+│   │       │   └── errors/       # Custom error types
+│   │       │
+│   │       ├── application/  # Application Layer
+│   │       │   ├── dtos/     # Data Transfer Objects
+│   │       │   │   ├── InputDto.ts
+│   │       │   │   └── OutputDto.ts
+│   │       │   ├── mappers/  # Object mappers
+│   │       │   │   ├── EntityToDtoMapper.ts
+│   │       │   │   └── EntityToDtoMapper.test.ts
+│   │       │   ├── useCases/ # Business logic
+│   │       │   │   ├── CreateUserUseCase.ts
+│   │       │   │   └── CreateUserUseCase.test.ts
+│   │       │   └── commands/ # Command objects
+│   │       │
+│   │       ├── infrastructure/  # Infrastructure Layer
+│   │       │   ├── api/        # API clients
+│   │       │   │   ├── UserApiClient.ts
+│   │       │   │   └── UserApiClient.test.ts
+│   │       │   └── repositories/ # Repository implementations
+│   │       │       ├── UserRepository.ts
+│   │       │       └── UserRepository.test.ts
+│   │       │
+│   │       ├── presentation/  # Presentation Layer
+│   │       │   ├── components/ # Feature components
+│   │       │   │   ├── UserForm.tsx
+│   │       │   │   └── UserForm.test.tsx
+│   │       │   ├── templates/  # Feature templates
+│   │       │   │   ├── UserProfileTemplate.tsx
+│   │       │   │   └── UserProfileTemplate.test.tsx
+│   │       │   ├── hooks/     # React hooks
+│   │       │   │   ├── useUser.ts
+│   │       │   │   └── useUser.test.ts
+│   │       │   └── utils/     # UI utilities
+│   │       │
+│   │       └── e2e/         # End-to-end tests
+│   │           ├── user-registration.spec.ts
+│   │           └── user-profile.spec.ts
+│   │
+│   ├── components/       # shadcn/ui components (auto-generated)
+│   │
+│   ├── shared/           # Shared code across features
+│   │   ├── interfaces/   # Shared interfaces and type definitions
+│   │   │   ├── User.ts
+│   │   │   └── ApiResponse.ts
+│   │   ├── services/     # Shared services for API calls, data handling
+│   │   │   ├── api.ts
+│   │   │   └── auth.ts
+│   │   ├── components/   # Reusable UI components (Atomic Design)
+│   │   │   ├── atoms/    # Basic building blocks
+│   │   │   │   ├── Button.tsx
+│   │   │   │   └── Button.test.tsx
+│   │   │   ├── molecules/ # Combinations of atoms
+│   │   │   └── organisms/ # Complex components
+│   │   ├── hooks/        # Shared hooks across features
+│   │   │   ├── useLocalStorage.ts
+│   │   │   └── useMediaQuery.ts
+│   │   ├── contexts/     # Global context providers
+│   │   │   ├── AuthContext.tsx
+│   │   │   └── ThemeContext.tsx
+│   │   ├── types/        # TypeScript type definitions
+│   │   │   ├── common.ts
+│   │   │   └── enums.ts
+│   │   └── utils/        # Helper functions, formatters, constants
+│   │       ├── formats.ts
+│   │       └── validation.ts
+│   │
+│   ├── lib/             # Utility functions
+│   │   ├── utils/       # Helper functions
+│   │   ├── constants/   # Constant values
+│   │   └── hooks/       # Global hooks
+│   │
+│   ├── styles/          # Global styles
+│   └── types/           # TypeScript type definitions
+│
+├── jest.config.js       # Jest configuration
+├── playwright.config.ts # Playwright configuration
+└── ... (config files)   # package.json, tsconfig.json, etc.
+```
+
+## Layer Responsibilities
+
+### Domain Layer
+- Core business logic and entities
+- Interface definitions (contracts)
+- Domain-specific validation
+- Error types
+- Pure TypeScript, no framework dependencies
+
+### Application Layer
+- Use cases that orchestrate domain entities
+- DTOs for input/output boundaries
+- Mappers between domain and DTOs
+- Business operation workflows
+- Independent of UI/infrastructure details
+
+### Infrastructure Layer
+- Implementation of domain interfaces
+- External API clients
+- Repository implementations
+- Storage mechanisms
+- Third-party service integrations
+
+### Presentation Layer
+- React components
+- Page templates
+- UI-specific hooks
+- Component organization (Atomic Design)
+- Layout composition
+
+### Shared Folder Structure
+- **interfaces/**: TypeScript interfaces shared across features
+- **services/**: Shared services for API calls, data handling
+- **components/**: Reusable UI components (follows Atomic Design)
+- **hooks/**: Shared React hooks used across multiple features
+- **contexts/**: Global context providers and state management
+- **types/**: TypeScript type definitions and enums
+- **utils/**: Helper functions, formatters, constants
+
+## Testing Approach
+
+- **Unit Tests**: Co-located with source files (*.test.ts/tsx)
+- **Integration Tests**: Co-located with source files (*.test.ts/tsx)
+- **E2E Tests**: Located in feature-specific e2e folders (*.spec.ts)
+
+## Naming Conventions
+
+1. **Files**:
+   - PascalCase for components, entities, interfaces, classes
+   - camelCase for hooks, utilities, instances
+   - kebab-case for configuration files
+
+2. **Folders**:
+   - camelCase for most directories
+   - Use descriptive, plural names for collections
+
+3. **TypeScript Types**:
+   - PascalCase for types/interfaces
+   - Suffix DTOs with `Dto`
+   - Suffix interfaces with their purpose (e.g., `UserRepository`)
+
+## Import Paths
+
+Use absolute imports for cross-feature dependencies:
+
+```typescript
+// Good
+import { User } from '@/features/users/domain/entities/User';
+import { Button } from '@/shared/components/atoms/Button';
+import { ApiService } from '@/shared/services/api';
+
+// Avoid
+import { User } from '../../domain/entities/User';
+import { Button } from '../../../../../shared/components/atoms/Button';
+```
+
+## Page-Template Relationship
+
+Pages should be minimal and only import templates:
+
+```typescript
+// pages/user/profile.tsx
+import { NextPage } from 'next';
+import Head from 'next/head';
+import { UserProfileTemplate } from '@/features/users/presentation/templates/UserProfileTemplate';
+
+const UserProfilePage: NextPage = () => {
+  return (
+    <>
+      <Head>
+        <title>User Profile</title>
+      </Head>
+      <UserProfileTemplate />
+    </>
+  );
+};
+
+export default UserProfilePage;
+```

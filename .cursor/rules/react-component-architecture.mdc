@@ -1,0 +1,140 @@
+---
+description: 
+globs: src/features/*/presentation/**/*,src/shared/components/**/*
+alwaysApply: false
+---
+# React Component Architecture Standards
+
+This rule applies to all React components in `src/components/**/*.tsx` and `src/shared/components/**/*.tsx`.
+
+## Component Structure Guidelines
+
+### 1. Functional Components with Arrow Functions
+
+Always implement React components as functional components using arrow function syntax:
+
+```tsx
+// Preferred
+const ComponentName = (props: ComponentProps) => {
+  return (
+    <div>Component content</div>
+  );
+};
+
+// Avoid
+function ComponentName(props: ComponentProps) {
+  return (
+    <div>Component content</div>
+  );
+}
+```
+
+### 2. Atomic Design Principles
+
+Follow atomic design principles for component segregation:
+- **Atoms**: Basic building blocks (buttons, inputs, icons)
+- **Molecules**: Combinations of atoms (search forms, menu items)
+- **Organisms**: Complex UI sections (navigation bars, forms)
+- **Templates**: Page layouts
+- **Pages**: Specific implementations of templates
+
+### 3. Component Folder Structure
+
+Each component should be organized into its own folder structure for maintainability:
+
+```
+component-name/
+├── index.tsx         # Main component export
+├── component-name.test.tsx # Component tests
+└── README.md         # Documentation
+```
+
+Export components through index files:
+
+```tsx
+// src/shared/components/atoms/button/index.tsx
+export { Button } from './Button';
+
+// src/shared/components/atoms/index.ts
+export * from './button';
+export * from './checkbox';
+// etc.
+```
+
+### 4. TypeScript Type Definitions
+
+Use TypeScript types for all props, preferring type over interface when extending component props:
+
+```tsx
+// For component props
+type ButtonProps = ComponentPropsWithoutRef<'button'> & {
+  variant?: 'primary' | 'secondary';
+};
+
+// When extending other component props
+type CustomButtonProps = Omit<ButtonProps, 'variant'> & {
+  customVariant: 'special' | 'default';
+};
+
+const Button = forwardRef<HTMLButtonElement, ButtonProps>(({ variant, ...props }, ref) => {
+  // Component implementation
+});
+```
+
+### 5. Unidirectional Data Flow
+
+Maintain unidirectional data flow patterns:
+- Parent components pass data down to child components
+- Child components notify parent components of events through callbacks
+- Avoid direct data manipulation across component boundaries
+
+### 6. Custom Hooks for Complex Logic
+
+Extract complex state management logic into custom hooks:
+
+```tsx
+// Preferred
+const useComponentLogic = (initialValue: string) => {
+  const [value, setValue] = useState(initialValue);
+  const reset = () => setValue('');
+  return { value, setValue, reset };
+};
+
+const Component = () => {
+  const { value, setValue, reset } = useComponentLogic('');
+  // Component implementation
+};
+
+// Avoid
+const Component = () => {
+  const [value, setValue] = useState('');
+  
+  // Complex state management logic directly in component
+  const handleChange = (e) => {
+    // Complex logic here
+  };
+  
+  const reset = () => {
+    // More complex logic
+  };
+  
+  // Component implementation
+};
+```
+
+### 7. Performance Optimization
+
+Use React.memo() for performance-critical components:
+
+```tsx
+const ExpensiveComponent = ({ data }: ExpensiveComponentProps) => {
+  // Component implementation
+};
+
+export default React.memo(ExpensiveComponent);
+```
+
+Only apply React.memo() when needed, based on:
+- Components that render often
+- Components with expensive rendering logic
+- Components that receive the same props frequently

@@ -1,0 +1,475 @@
+---
+description: 
+globs: src/features/*/presentation/**/*
+alwaysApply: false
+---
+# Presentation Layer
+
+The Presentation Layer handles all UI concerns, including components, templates, and hooks for interacting with the application layer.
+
+## Structure
+
+```
+<feature>/presentation/
+├── components/         # Feature-specific components
+│   ├── UserForm.tsx
+│   └── UserForm.test.tsx
+├── templates/          # Feature-specific page templates
+│   ├── UserProfileTemplate.tsx
+│   └── UserProfileTemplate.test.tsx
+├── hooks/              # React hooks
+│   ├── useUser.ts
+│   └── useUser.test.ts
+└── utils/              # UI utilities
+```
+
+Shared presentation components:
+
+```
+shared/
+├── components/         # Reusable UI components (follows Atomic Design)
+│   ├── atoms/          # Basic building blocks (buttons, inputs, etc.)
+│   ├── molecules/      # Combinations of atoms (form fields, search bars)
+│   └── organisms/      # Complex components (forms, tables)
+├── interfaces/         # Shared interfaces and type definitions
+├── services/           # Shared services for API calls, data handling 
+├── types/              # TypeScript type definitions and enums
+└── utils/              # Helper functions, formatters, constants
+```
+
+## Rules
+
+1. **Components** should:
+   - Follow single responsibility principle
+   - Be reusable and composable
+   - Receive data and callbacks via props
+   - Not directly access application or domain layer
+   - Use hooks for state and side effects
+   - Be tested in isolation
+
+2. **Templates** should:
+   - Compose components to create page layouts
+   - Receive data from pages
+   - Handle component arrangement and composition
+   - Not contain business logic
+   - Be as simple as possible, delegating complexity to components
+
+3. **Hooks** should:
+   - Encapsulate interaction with the application layer
+   - Handle data fetching, processing, and state management
+   - Provide clear and consistent interfaces
+   - Abstract async operations and error handling
+   - Be reusable across components
+
+4. **Atomic Design**
+   - **Atoms**: Basic building blocks (buttons, inputs, labels, icons)
+   - **Molecules**: Groups of atoms that function together (form fields, search bars)
+   - **Organisms**: Complex components composed of molecules and atoms (forms, tables, cards)
+   - **Templates**: Page layouts with placeholder content
+   - **Pages**: Templates with actual content (implemented by Next.js pages)
+
+5. **Forms Implementation**
+   - Must follow the React Hook Form patterns outlined in `docs/react-hook-form-patterns.md`
+   - Use Zod schema validation for complex validation
+   - Implement proper error handling with UI feedback
+   - Follow the form structure and component patterns from the guidelines
+   - Leverage performance optimization techniques like uncontrolled components
+   - Use appropriate patterns for multi-step forms and dynamic fields
+
+6. **UI Component Library**
+   - Use shadcn/ui components for all UI elements
+   - Always import components from `@/shared/components/atoms`, `@/shared/components/molecules`, or `@/shared/components/organisms` instead of directly from shadcn
+   - If a required shadcn component is not available, install it following the guidelines in `@shadcn-component-installation.mdc`
+   - Create appropriate wrappers in the shared layer following the Atomic Design pattern
+   - Follow all rules in the shadcn-component-installation guide for customization, testing and documentation
+   - Never modify the original shadcn components directly in `@/components/ui`
+   - Use the wrapper component pattern to add custom variants or functionality
+
+## Example Component
+
+```tsx
+// features/users/presentation/components/UserForm.tsx
+import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { Button } from '@/shared/components/atoms/button';
+import { Input } from '@/shared/components/atoms/input';
+import { Form } from '@/shared/components/organisms/form';
+import { FormItem } from '@/shared/components/atoms/form';
+import { FormControl } from '@/shared/components/atoms/form';
+import { FormMessage } from '@/shared/components/atoms/form';
+import { Label } from '@/shared/components/atoms/label';
+import { CreateUserInputDto } from '../../application/dtos/CreateUserInputDto';
+
+// Create a Zod schema for validation
+const userFormSchema = z.object({
+  username: z.string().min(3, 'Username must be at least 3 characters'),
+  email: z.string().email('Please enter a valid email address'),
+  password: z.string().min(8, 'Password must be at least 8 characters'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required')
+});
+
+type UserFormValues = z.infer<typeof userFormSchema>;
+
+interface UserFormProps {
+  onSubmit: (data: CreateUserInputDto) => Promise<void>;
+  initialData?: Partial<CreateUserInputDto>;
+  isLoading?: boolean;
+  error?: Error | null;
+}
+
+export function UserForm({ 
+  onSubmit, 
+  initialData = {}, 
+  isLoading = false,
+  error = null
+}: UserFormProps) {
+  const [submitting, setSubmitting] = useState(false);
+  const form = useForm<UserFormValues>({
+    resolver: zodResolver(userFormSchema),
+    defaultValues: initialData,
+    mode: 'onBlur'
+  });
+
+  const handleSubmit = async (data: UserFormValues) => {
+    setSubmitting(true);
+    try {
+      await onSubmit(data as CreateUserInputDto);
+      form.reset();
+    } catch (err) {
+      // UI-specific error handling
+      console.error('Form submission error:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <Form onSubmit={form.handleSubmit(handleSubmit)}>
+      <FormItem>
+        <Label htmlFor="username">Username</Label>
+        <FormControl>
+          <Input 
+            id="username"
+            {...form.register('username')}
+            disabled={isLoading || submitting}
+          />
+        </FormControl>
+        <FormMessage>{form.formState.errors.username?.message}</FormMessage>
+      </FormItem>
+
+      <FormItem>
+        <Label htmlFor="email">Email</Label>
+        <FormControl>
+          <Input 
+            id="email"
+            type="email" 
+            {...form.register('email')}
+            disabled={isLoading || submitting}
+          />
+        </FormControl>
+        <FormMessage>{form.formState.errors.email?.message}</FormMessage>
+      </FormItem>
+
+      <FormItem>
+        <Label htmlFor="password">Password</Label>
+        <FormControl>
+          <Input 
+            id="password"
+            type="password" 
+            {...form.register('password')}
+            disabled={isLoading || submitting}
+          />
+        </FormControl>
+        <FormMessage>{form.formState.errors.password?.message}</FormMessage>
+      </FormItem>
+
+      <FormItem>
+        <Label htmlFor="firstName">First Name</Label>
+        <FormControl>
+          <Input 
+            id="firstName"
+            {...form.register('firstName')}
+            disabled={isLoading || submitting}
+          />
+        </FormControl>
+        <FormMessage>{form.formState.errors.firstName?.message}</FormMessage>
+      </FormItem>
+
+      <FormItem>
+        <Label htmlFor="lastName">Last Name</Label>
+        <FormControl>
+          <Input 
+            id="lastName"
+            {...form.register('lastName')}
+            disabled={isLoading || submitting}
+          />
+        </FormControl>
+        <FormMessage>{form.formState.errors.lastName?.message}</FormMessage>
+      </FormItem>
+
+      {error && (
+        <div className="text-destructive" role="alert">
+          {error.message}
+        </div>
+      )}
+
+      <Button type="submit" variant="primary" disabled={isLoading || submitting}>
+        {submitting ? 'Submitting...' : isLoading ? 'Loading...' : 'Create Account'}
+      </Button>
+    </Form>
+  );
+}
+```
+
+## Example Template
+
+```tsx
+// features/users/presentation/templates/UserProfileTemplate.tsx
+import { MainLayout } from '@/shared/components/templates/MainLayout';
+import { UserDetails } from '../components/UserDetails';
+import { UserActivityList } from '../components/UserActivityList';
+import { UserSettings } from '../components/UserSettings';
+import { UserOutputDto } from '../../application/dtos/UserOutputDto';
+import { ActivityDto } from '../../application/dtos/ActivityDto';
+
+interface UserProfileTemplateProps {
+  user: UserOutputDto;
+  activities: ActivityDto[];
+  isLoading: boolean;
+  onUpdateSettings: (settings: any) => Promise<void>;
+}
+
+export function UserProfileTemplate({
+  user,
+  activities,
+  isLoading,
+  onUpdateSettings
+}: UserProfileTemplateProps) {
+  return (
+    <MainLayout>
+      <div className="container mx-auto py-10">
+        <h1 className="text-3xl font-bold mb-8">User Profile</h1>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
+            <div className="mb-8">
+              <UserDetails user={user} isLoading={isLoading} />
+            </div>
+            
+            <div>
+              <h2 className="text-xl font-bold mb-4">Recent Activity</h2>
+              <UserActivityList activities={activities} isLoading={isLoading} />
+            </div>
+          </div>
+          
+          <div>
+            <h2 className="text-xl font-bold mb-4">Settings</h2>
+            <UserSettings 
+              user={user} 
+              isLoading={isLoading} 
+              onUpdate={onUpdateSettings}
+            />
+          </div>
+        </div>
+      </div>
+    </MainLayout>
+  );
+}
+```
+
+## Example Hook
+
+```typescript
+// features/users/presentation/hooks/useUser.ts
+import { useState, useEffect } from 'react';
+import { UserRepository } from '../../infrastructure/repositories/UserRepository';
+import { UserApiClient } from '../../infrastructure/api/UserApiClient';
+import { GetUserUseCase } from '../../application/useCases/GetUserUseCase';
+import { UserOutputDto } from '../../application/dtos/UserOutputDto';
+
+export function useUser(userId: string) {
+  const [user, setUser] = useState<UserOutputDto | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      setIsLoading(true);
+      setError(null);
+
+      try {
+        // Create dependencies
+        const apiClient = new UserApiClient();
+        const repository = new UserRepository(apiClient);
+        const getUserUseCase = new GetUserUseCase(repository);
+
+        // Execute use case
+        const userDto = await getUserUseCase.execute(userId);
+        setUser(userDto);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (userId) {
+      fetchUser();
+    }
+  }, [userId]);
+
+  return { user, isLoading, error };
+}
+```
+
+## React Hook Form Implementation
+
+All forms in the presentation layer must adhere to these patterns from the `docs/react-hook-form-patterns.md` guidelines:
+
+### Form Setup
+- Use Zod for schema validation
+- Create TypeScript types from Zod schemas
+- Initialize forms with appropriate validation resolvers
+- Implement proper error handling with both UI and API errors
+
+### Example Form Implementation
+```tsx
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { useForm } from 'react-hook-form';
+
+// 1. Define schema
+const formSchema = z.object({
+  name: z.string().min(3, 'Name must be at least 3 characters'),
+  email: z.string().email('Invalid email format'),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export const MyZodForm = () => {
+  const form = useForm<FormValues>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+    },
+  });
+
+  const onSubmit = async (data: FormValues) => {
+    try {
+      await api.submitData(data);
+      form.reset();
+    } catch (err) {
+      // Handle API errors properly
+      if (err.field) {
+        form.setError(err.field, {
+          type: 'server',
+          message: err.message,
+        });
+      } else {
+        form.setError('root', {
+          type: 'server',
+          message: 'Failed to submit form. Please try again.',
+        });
+      }
+    }
+  };
+
+  return (
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      {/* Form implementation... */}
+    </form>
+  );
+};
+```
+
+### Performance Optimization
+- Memoize event handlers with useCallback
+- Prefer uncontrolled components for better performance
+- Use form.reset() rather than manually clearing fields
+- Use useFieldArray for dynamic form fields
+
+### Advanced Patterns
+- Multi-step forms should use FormProvider for shared state
+- Dynamic fields should leverage useFieldArray
+- Conditional field rendering should use the watch method
+
+## Error Handling Guidelines
+
+### Toast Notifications vs. UI Error Display
+
+1. **API Response Handling**:
+   - Use toast notifications for API success messages and errors
+   - Success toasts should be brief and disappear automatically
+   - Error toasts should be clear about what went wrong and potentially include retry actions
+
+```tsx
+// API error handling with toast
+const handleSubmit = async (data) => {
+  try {
+    await apiClient.updateProfile(data);
+    toast.success('Profile updated successfully');
+  } catch (error) {
+    toast.error(`Failed to update profile: ${error.message}`);
+  }
+};
+```
+
+2. **Form Validation & UI Errors**:
+   - Display validation errors inline within the UI (not in toasts)
+   - Form field errors should appear next to the relevant fields
+   - General form errors should appear at the top or bottom of the form
+
+```tsx
+// UI error handling within components
+function UserForm({ onSubmit }) {
+  const { register, handleSubmit, formState: { errors } } = useForm();
+  
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="form-field">
+        <label>Email</label>
+        <input {...register('email', { required: true, pattern: /^\S+@\S+$/i })} />
+        {errors.email?.type === 'required' && <span className="error">Email is required</span>}
+        {errors.email?.type === 'pattern' && <span className="error">Invalid email format</span>}
+      </div>
+      
+      {/* Other form fields... */}
+      
+      <button type="submit">Submit</button>
+    </form>
+  );
+}
+```
+
+3. **Error Boundaries**:
+   - Use React Error Boundaries for unexpected component errors
+   - Display user-friendly fallback UIs instead of crashing the application
+   - Log these errors to monitoring systems
+
+```tsx
+// Error boundary component
+class ErrorBoundary extends React.Component {
+  state = { hasError: false };
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    // Log to error monitoring service
+    logErrorToService(error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return <div className="error-container">Something went wrong. Please try again.</div>;
+    }
+    
+    return this.props.children;
+  }
+}
+```

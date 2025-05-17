@@ -1,0 +1,56 @@
+---
+description: 
+globs: src/components/ui/*.tsx,src/shared/components/**/*.tsx
+alwaysApply: false
+---
+# Component Registry Automation
+
+This rule automatically updates component registry files when new components are added.
+
+## Shadcn Component Tracking
+
+When a new shadcn component is installed, the information needs to be added to the docs/shadcn-component-registry.md file.
+
+### Glob Pattern
+```
+src/components/ui/*.{tsx,jsx}
+```
+
+### Registry Update Format
+
+For each new shadcn component detected, add a new row to the table in this format:
+
+```markdown
+| ComponentName | src/components/ui/component-name.tsx | YYYY-MM-DD | Brief component description |
+```
+
+## Shared Component Tracking
+
+When a new shared wrapper component is created, the information needs to be added to the docs/shared-component-registry.md file.
+
+### Glob Pattern
+```
+src/shared/components/**/*.{tsx,jsx}
+```
+
+### Registry Update Format
+
+For each new shared component detected, add a new row to the table in this format:
+
+```markdown
+| WrapperComponentName | src/shared/components/path/to/component.tsx | RelatedShadcnComponent | YYYY-MM-DD | Brief component description |
+```
+
+## Component Metadata Format
+
+To help the registry automation, add JSDoc comments to the top of your component files:
+
+```tsx
+/**
+ * @component ButtonWrapper
+ * @description A shared wrapper for the shadcn Button component with preset styles
+ * @shadcnComponent Button
+ */
+```
+
+This metadata will be used to automatically populate the registry entries.

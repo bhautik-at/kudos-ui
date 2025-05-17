@@ -1,0 +1,326 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Code Quality Standards
+
+## Core Principles
+
+### 1. Maintain a maximum cyclomatic complexity of 10 per function
+- Keep conditional logic simple and manageable
+- Break complex functions into smaller, focused ones
+- Use helper functions to encapsulate complex logic
+
+```javascript
+// Bad: High cyclomatic complexity
+function processUserData(user) {
+  if (!user) return null;
+  if (user.role === 'admin') {
+    if (user.permissions.includes('manage_users')) {
+      if (user.active) {
+        // Many more conditionals...
+      }
+    }
+  }
+}
+
+// Good: Lower complexity with early returns and helper functions
+function processUserData(user) {
+  if (!user) return null;
+  if (!isAuthorizedAdmin(user)) return { error: 'Unauthorized' };
+  
+  return processAuthorizedAdmin(user);
+}
+
+function isAuthorizedAdmin(user) {
+  return user.role === 'admin' && 
+         user.permissions.includes('manage_users') &&
+         user.active;
+}
+```
+
+### 2. Follow airbnb-eslint conventions for formatting
+- Consistent spacing and indentation
+- Proper semicolon and comma usage
+- Standardized bracket and parenthesis placement
+
+```javascript
+// Properly formatted code following airbnb style
+const calculateTotal = (items) => {
+  return items.reduce((total, item) => {
+    const itemTotal = item.price * item.quantity;
+    return total + itemTotal;
+  }, 0);
+};
+```
+
+### 3. Implement early returns instead of deeply nested conditionals
+- Validate preconditions at the beginning of functions
+- Return early for edge cases
+- Maintain a single level of indentation when possible
+
+```javascript
+// Bad: Deeply nested conditionals
+function processOrder(order) {
+  if (order) {
+    if (order.items.length > 0) {
+      if (order.paymentVerified) {
+        // Process the order
+      } else {
+        return 'Payment required';
+      }
+    } else {
+      return 'No items in order';
+    }
+  } else {
+    return 'Invalid order';
+  }
+}
+
+// Good: Early returns
+function processOrder(order) {
+  if (!order) return 'Invalid order';
+  if (order.items.length === 0) return 'No items in order';
+  if (!order.paymentVerified) return 'Payment required';
+  
+  // Process the order
+}
+```
+
+### 4. Use descriptive variable names following camelCase convention
+- Variables should clearly indicate their purpose
+- Use camelCase for variables and functions
+- Avoid abbreviations unless widely understood
+
+```typescript
+// Bad: Unclear naming
+const fn = (a, b) => {
+  return a + getTx(b);
+};
+
+// Good: Descriptive naming
+const calculatePriceWithTax = (basePrice, taxRate) => {
+  return basePrice + calculateTaxAmount(basePrice, taxRate);
+};
+```
+
+### 5. Limit function length to maximum 30 lines
+- Each function should have a single responsibility
+- Break large functions into smaller, more focused ones
+- Improve readability and testability with shorter functions
+
+### 6. Document complex algorithms with clear inline comments
+- Explain the "why" not just the "what"
+- Document non-obvious edge cases
+- Include references to external resources when appropriate
+
+```javascript
+/**
+ * Implements the Levenshtein distance algorithm to measure 
+ * the difference between two strings.
+ * 
+ * Time Complexity: O(m*n) where m,n are string lengths
+ * Space Complexity: O(m*n)
+ */
+function levenshteinDistance(str1, str2) {
+  // Initialize matrix of size (str1+1)*(str2+1)
+  const matrix = Array(str1.length + 1).fill().map(() => 
+    Array(str2.length + 1).fill(0)
+  );
+  
+  // Fill the first row and column
+  for (let i = 0; i <= str1.length; i++) matrix[i][0] = i;
+  for (let j = 0; j <= str2.length; j++) matrix[0][j] = j;
+  
+  // Fill the rest of the matrix
+  for (let i = 1; i <= str1.length; i++) {
+    for (let j = 1; j <= str2.length; j++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,      // Deletion
+        matrix[i][j - 1] + 1,      // Insertion
+        matrix[i - 1][j - 1] + cost // Substitution
+      );
+    }
+  }
+  
+  return matrix[str1.length][str2.length];
+}
+```
+
+### 7. Avoid any/unknown types in TypeScript implementations
+- Use specific types rather than `any`
+- Leverage interfaces and type definitions
+- Apply generics for reusable components
+
+```typescript
+// Bad: Using any type
+function processData(data: any): any {
+  return data.map((item: any) => item.value);
+}
+
+// Good: Using specific types
+interface DataItem {
+  id: string;
+  value: number;
+}
+
+function processData(data: DataItem[]): number[] {
+  return data.map(item => item.value);
+}
+```
+
+### 8. Strictly adhere to the Single Responsibility Principle (SRP)
+- Each component, hook, or utility function should have one and only one reason to change
+- Focus on high cohesion with each unit handling a specific concern
+- Separate UI rendering, state management, and data fetching concerns
+
+```typescript
+// Bad: Component with multiple responsibilities
+function UserProfile({ userId }) {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    // Data fetching logic
+    async function fetchUser() {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/users/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch user');
+        const userData = await response.json();
+        setUser(userData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchUser();
+  }, [userId]);
+  
+  // Format/transformation logic
+  const fullName = user ? `${user.firstName} ${user.lastName}` : '';
+  const formattedDate = user ? new Date(user.createdAt).toLocaleDateString() : '';
+  const userStatus = user && user.lastLogin > (Date.now() - 30 * 24 * 60 * 60 * 1000) 
+    ? 'active' : 'inactive';
+  
+  // Rendering logic with complex conditional UI
+  if (isLoading) return <Spinner />;
+  if (error) return <ErrorMessage message={error} />;
+  
+  return (
+    <div className="user-profile">
+      <h2>{fullName}</h2>
+      <p>Status: {userStatus}</p>
+      <p>Member since: {formattedDate}</p>
+      {/* More UI rendering */}
+    </div>
+  );
+}
+
+// Good: Separation of responsibilities
+// Custom hook for data fetching
+function useUser(userId) {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  useEffect(() => {
+    async function fetchUser() {
+      try {
+        setIsLoading(true);
+        const response = await fetch(`/api/users/${userId}`);
+        if (!response.ok) throw new Error('Failed to fetch user');
+        const userData = await response.json();
+        setUser(userData);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    
+    fetchUser();
+  }, [userId]);
+  
+  return { user, isLoading, error };
+}
+
+// Utility functions for formatting
+const userUtils = {
+  getFullName: (user) => user ? `${user.firstName} ${user.lastName}` : '',
+  getFormattedDate: (dateString) => dateString ? new Date(dateString).toLocaleDateString() : '',
+  getUserStatus: (lastLogin) => lastLogin > (Date.now() - 30 * 24 * 60 * 60 * 1000) ? 'active' : 'inactive'
+};
+
+// Presentation components
+function UserProfile({ userId }) {
+  const { user, isLoading, error } = useUser(userId);
+  
+  if (isLoading) return <Spinner />;
+  if (error) return <ErrorMessage message={error} />;
+  
+  return <UserProfileView user={user} />;
+}
+
+function UserProfileView({ user }) {
+  const fullName = userUtils.getFullName(user);
+  const formattedDate = userUtils.getFormattedDate(user.createdAt);
+  const userStatus = userUtils.getUserStatus(user.lastLogin);
+  
+  return (
+    <div className="user-profile">
+      <h2>{fullName}</h2>
+      <p>Status: {userStatus}</p>
+      <p>Member since: {formattedDate}</p>
+      {/* More UI rendering */}
+    </div>
+  );
+}
+```
+
+### 9. Error handling with proper user feedback
+- Use toast notifications only for API responses (success and errors)
+- Display validation errors directly in the UI, not as toasts
+- Provide clear, actionable error messages
+
+```typescript
+// Good: API errors with toast, validation in UI
+async function submitForm(data) {
+  // Validate client-side first
+  const errors = validateFormData(data);
+  if (errors) {
+    setFormErrors(errors); // Shows in the UI
+    return;
+  }
+
+  try {
+    // API call
+    await api.submitData(data);
+    toast.success('Data saved successfully');
+  } catch (error) {
+    toast.error(`Failed to save: ${getErrorMessage(error)}`);
+  }
+}
+
+// Bad: Using toast for everything
+async function submitForm(data) {
+  // Validation errors in toast
+  const errors = validateFormData(data);
+  if (errors) {
+    toast.error('Please fix form errors');
+    return;
+  }
+
+  try {
+    await api.submitData(data);
+    toast.success('Success');
+  } catch (error) {
+    toast.error('Failed');
+  }
+}
+```

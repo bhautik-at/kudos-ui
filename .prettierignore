@@ -1,0 +1,10 @@
+.next
+node_modules
+public
+build
+coverage
+*.log
+.git
+.husky
+.vscode
+README.md 

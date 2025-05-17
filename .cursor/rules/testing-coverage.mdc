@@ -1,0 +1,556 @@
+---
+description: 
+globs: **/*.test.tsx,**/*.test.ts
+alwaysApply: false
+---
+# Testing Coverage Strategy
+
+This rule outlines the testing coverage strategy for the clean architecture, focusing on what to test at each level and how to achieve proper coverage.
+
+## Testing Pyramid
+
+Follow the testing pyramid for coverage distribution:
+- **Unit Tests**: ~70% of test coverage
+- **Integration Tests**: ~20% of test coverage
+- **E2E Tests**: ~10% of test coverage
+
+## Coverage Targets
+
+| Layer | Unit Test Coverage | Integration Test Coverage | E2E Test Coverage |
+|-------|-------------------|--------------------------|-------------------|
+| Domain | 90-100% | N/A | N/A |
+| Application | 85-95% | 50-60% | N/A |
+| Infrastructure | 70-80% | 70-80% | N/A |
+| Presentation | 80-90% | 30-40% | Key user flows |
+
+## What to Test at Each Level
+
+### Unit Tests
+
+Unit tests should focus on isolated components:
+
+1. **Domain Layer**:
+   - Entity validation and business logic
+   - Value objects and their behavior
+   - Utility functions specific to the domain
+
+2. **Application Layer**:
+   - Mappers between entities and DTOs
+   - Use case execution with mocked dependencies
+   - Command validation
+
+3. **Infrastructure Layer**:
+   - Parsing and serialization logic
+   - Error handling functions
+   - Small utility functions
+
+4. **Presentation Layer**:
+   - Component rendering
+   - Component state transitions
+   - UI utilities
+   - Hook behavior with mocked dependencies
+
+### Integration Tests
+
+Integration tests should focus on boundaries:
+
+1. **Application Layer**:
+   - Use cases with real domain entities
+   - Interactions between multiple use cases
+   - Error handling across component boundaries
+
+2. **Infrastructure Layer**:
+   - Repository implementations with test databases
+   - API client behavior with mocked HTTP responses
+   - Storage implementations with ephemeral storage
+
+3. **Presentation Layer**:
+   - Connected components with real hooks
+   - Form submissions and data flow
+   - Component interactions
+
+### E2E Tests
+
+E2E tests should focus on critical user flows:
+
+1. **Key User Journeys**:
+   - User registration and authentication
+   - Core business processes
+   - Payment flows
+   - Data persistence across page navigation
+
+2. **Edge Cases**:
+   - Error handling visible to users
+   - Accessibility requirements
+   - Performance thresholds
+
+## Testing Patterns by Layer
+
+### Domain Layer Testing
+
+```typescript
+// features/users/domain/entities/User.test.ts
+import { User } from './User';
+
+describe('User Entity', () => {
+  // Required properties validation
+  it('should validate required properties', () => {
+    expect(
+      () =>
+        new User({
+          username: '',
+          email: 'test@example.com',
+          firstName: 'Test',
+          lastName: 'User',
+          password: 'password123',
+        })
+    ).toThrow('Username is required');
+  });
+
+  // Business rules validation
+  it('should validate password strength', () => {
+    expect(
+      () =>
+        new User({
+          username: 'testuser',
+          email: 'test@example.com',
+          firstName: 'Test',
+          lastName: 'User',
+          password: 'weak',
+        })
+    ).toThrow('Password must be at least 8 characters');
+  });
+
+  // Entity behavior
+  it('should create proper full name', () => {
+    const user = new User({
+      username: 'testuser',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      password: 'password123',
+    });
+
+    expect(user.fullName).toBe('Test User');
+  });
+
+  // Edge cases
+  it('should handle special characters in email', () => {
+    const user = new User({
+      username: 'testuser',
+      email: 'test+special@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      password: 'password123',
+    });
+
+    expect(user.email).toBe('test+special@example.com');
+  });
+});
+```
+
+### Application Layer Testing
+
+```typescript
+// Unit test for mapper
+// features/users/application/mappers/UserToOutputDtoMapper.test.ts
+import { User } from '../../domain/entities/User';
+import { UserToOutputDtoMapper } from './UserToOutputDtoMapper';
+
+describe('UserToOutputDtoMapper', () => {
+  it('should correctly map User to UserOutputDto', () => {
+    // Arrange
+    const user = new User({
+      id: '123',
+      username: 'testuser',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User',
+      password: 'password123',
+      role: { id: '1', name: 'user' },
+      createdAt: new Date('2023-01-01'),
+    });
+
+    // Act
+    const dto = UserToOutputDtoMapper.toDto(user);
+
+    // Assert
+    expect(dto.id).toBe('123');
+    expect(dto.username).toBe('testuser');
+    expect(dto.email).toBe('test@example.com');
+    expect(dto.displayName).toBe('Test User');
+    expect(dto.role).toBe('user');
+    expect(dto.createdAt).toBe('2023-01-01T00:00:00.000Z');
+  });
+});
+
+// Integration test for use case
+// features/users/application/useCases/CreateUserUseCase.test.ts
+import { CreateUserUseCase } from './CreateUserUseCase';
+import { UserRepository } from '../../infrastructure/repositories/UserRepository';
+import { EmailAlreadyExistsError } from '../../domain/errors/EmailAlreadyExistsError';
+
+// Mock the repository
+jest.mock('../../infrastructure/repositories/UserRepository');
+
+describe('CreateUserUseCase Integration Test', () => {
+  let userRepository: jest.Mocked<UserRepository>;
+  let createUserUseCase: CreateUserUseCase;
+
+  beforeEach(() => {
+    userRepository = new UserRepository() as jest.Mocked<UserRepository>;
+    createUserUseCase = new CreateUserUseCase(userRepository);
+  });
+
+  it('should create a user and return DTO', async () => {
+    // Arrange
+    userRepository.emailExists.mockResolvedValue(false);
+    userRepository.save.mockImplementation(user =>
+      Promise.resolve({
+        ...user,
+        id: '123',
+        role: { id: '2', name: 'user' },
+        createdAt: new Date('2023-01-01'),
+      })
+    );
+
+    // Act
+    const result = await createUserUseCase.execute({
+      username: 'testuser',
+      email: 'test@example.com',
+      password: 'password123',
+      firstName: 'Test',
+      lastName: 'User',
+    });
+
+    // Assert - Check all expected fields in result
+    expect(result.id).toBe('123');
+    expect(result.username).toBe('testuser');
+    expect(result.email).toBe('test@example.com');
+    expect(result.displayName).toBe('Test User');
+    expect(result.role).toBe('user');
+    expect(result.createdAt).toBe('2023-01-01T00:00:00.000Z');
+    expect(result).not.toHaveProperty('password');
+    
+    // Assert - Verify repository was called correctly
+    expect(userRepository.emailExists).toHaveBeenCalledWith('test@example.com');
+    expect(userRepository.save).toHaveBeenCalledTimes(1);
+  });
+
+  it('should throw error when email already exists', async () => {
+    // Arrange
+    userRepository.emailExists.mockResolvedValue(true);
+
+    // Act & Assert
+    await expect(
+      createUserUseCase.execute({
+        username: 'testuser',
+        email: 'existing@example.com',
+        password: 'password123',
+        firstName: 'Test',
+        lastName: 'User',
+      })
+    ).rejects.toThrow(EmailAlreadyExistsError);
+    
+    // Assert repository was called
+    expect(userRepository.emailExists).toHaveBeenCalledWith('existing@example.com');
+    expect(userRepository.save).not.toHaveBeenCalled();
+  });
+});
+```
+
+### Presentation Layer Testing
+
+```typescript
+// Unit test for component
+// features/users/presentation/components/UserForm.test.tsx
+import React from 'react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { UserForm } from './UserForm';
+
+describe('UserForm', () => {
+  const mockSubmit = jest.fn();
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should render form fields correctly', () => {
+    // Arrange & Act
+    render(<UserForm onSubmit={mockSubmit} />);
+
+    // Assert
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/first name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/last name/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /submit/i })).toBeInTheDocument();
+  });
+
+  it('should validate required fields', async () => {
+    // Arrange
+    render(<UserForm onSubmit={mockSubmit} />);
+
+    // Act
+    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+    // Assert
+    await waitFor(() => {
+      expect(screen.getByText(/username is required/i)).toBeInTheDocument();
+      expect(screen.getByText(/email is required/i)).toBeInTheDocument();
+      expect(mockSubmit).not.toHaveBeenCalled();
+    });
+  });
+
+  it('should submit form with valid data', async () => {
+    // Arrange
+    render(<UserForm onSubmit={mockSubmit} />);
+
+    // Act
+    fireEvent.change(screen.getByLabelText(/username/i), {
+      target: { value: 'testuser' },
+    });
+    fireEvent.change(screen.getByLabelText(/email/i), {
+      target: { value: 'test@example.com' },
+    });
+    fireEvent.change(screen.getByLabelText(/password/i), {
+      target: { value: 'password123' },
+    });
+    fireEvent.change(screen.getByLabelText(/first name/i), {
+      target: { value: 'Test' },
+    });
+    fireEvent.change(screen.getByLabelText(/last name/i), {
+      target: { value: 'User' },
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: /submit/i }));
+
+    // Assert
+    await waitFor(() => {
+      expect(mockSubmit).toHaveBeenCalledWith({
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'Test',
+        lastName: 'User',
+      });
+    });
+  });
+
+  it('should display error message when provided', () => {
+    // Arrange & Act
+    render(
+      <UserForm
+        onSubmit={mockSubmit}
+        error={new Error('Something went wrong')}
+      />
+    );
+
+    // Assert
+    expect(screen.getByText('Something went wrong')).toBeInTheDocument();
+  });
+
+  it('should disable form when loading', () => {
+    // Arrange & Act
+    render(<UserForm onSubmit={mockSubmit} isLoading={true} />);
+
+    // Assert
+    expect(screen.getByLabelText(/username/i)).toBeDisabled();
+    expect(screen.getByLabelText(/email/i)).toBeDisabled();
+    expect(screen.getByLabelText(/password/i)).toBeDisabled();
+    expect(screen.getByRole('button', { name: /loading/i })).toBeDisabled();
+  });
+});
+
+// Integration test with hooks
+// features/users/presentation/hooks/useCreateUser.test.tsx
+import { renderHook, act } from '@testing-library/react-hooks';
+import { useCreateUser } from './useCreateUser';
+
+// Mock fetch API
+global.fetch = jest.fn();
+
+describe('useCreateUser Integration Test', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (global.fetch as jest.Mock).mockClear();
+  });
+
+  it('should create user successfully', async () => {
+    // Arrange
+    const mockUser = {
+      id: '123',
+      username: 'testuser',
+      email: 'test@example.com',
+      displayName: 'Test User',
+      role: 'user',
+      createdAt: '2023-01-01T00:00:00.000Z',
+    };
+    
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockUser,
+    });
+
+    // Act
+    const { result, waitForNextUpdate } = renderHook(() => useCreateUser());
+    
+    const promise = act(async () => {
+      const resultUser = await result.current.createUser({
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'Test',
+        lastName: 'User',
+      });
+      
+      // Assert result
+      expect(resultUser).toEqual(mockUser);
+    });
+    
+    // Assert loading state change
+    expect(result.current.loading).toBe(true);
+    
+    await waitForNextUpdate();
+    await promise;
+    
+    // Assert final state
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBe(null);
+    
+    // Assert API call
+    expect(global.fetch).toHaveBeenCalledWith('/api/users', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'password123',
+        firstName: 'Test',
+        lastName: 'User',
+      }),
+    });
+  });
+
+  it('should handle error during user creation', async () => {
+    // Arrange
+    const errorMessage = 'Email already exists';
+    
+    (global.fetch as jest.Mock).mockResolvedValueOnce({
+      ok: false,
+      json: async () => ({ message: errorMessage }),
+    });
+
+    // Act
+    const { result, waitForNextUpdate } = renderHook(() => useCreateUser());
+    
+    const promise = act(async () => {
+      try {
+        await result.current.createUser({
+          username: 'testuser',
+          email: 'existing@example.com',
+          password: 'password123',
+          firstName: 'Test',
+          lastName: 'User',
+        });
+        fail('Should have thrown an error');
+      } catch (error) {
+        // Assert error is thrown
+        expect(error).toBeInstanceOf(Error);
+        expect(error.message).toBe(errorMessage);
+      }
+    });
+    
+    await waitForNextUpdate();
+    await promise;
+    
+    // Assert final state
+    expect(result.current.loading).toBe(false);
+    expect(result.current.error).toBeInstanceOf(Error);
+    expect(result.current.error?.message).toBe(errorMessage);
+  });
+});
+```
+
+### E2E Testing
+
+The E2E tests should cover critical user flows and be written with Playwright. These tests should be located in the `e2e` folder of the feature they're testing.
+
+```typescript
+// features/users/e2e/user-registration.spec.ts
+import { test, expect } from '@playwright/test';
+
+test.describe('User Registration E2E', () => {
+  test.beforeEach(async ({ page }) => {
+    // Clean up test data and go to start page
+    await page.goto('/register');
+  });
+
+  test('complete registration flow from new user to dashboard', async ({ page }) => {
+    // Generate unique test data to avoid conflicts
+    const uniqueId = Date.now().toString();
+    const username = `testuser_${uniqueId}`;
+    const email = `test_${uniqueId}@example.com`;
+    
+    // Step 1: Fill registration form
+    await page.fill('[name="username"]', username);
+    await page.fill('[name="email"]', email);
+    await page.fill('[name="password"]', 'Password123!');
+    await page.fill('[name="firstName"]', 'Test');
+    await page.fill('[name="lastName"]', 'User');
+    
+    // Step 2: Submit form
+    await page.click('button[type="submit"]');
+    
+    // Step 3: Verify redirect to dashboard
+    await expect(page).toHaveURL(/dashboard/);
+    
+    // Step 4: Verify user is logged in
+    await expect(page.locator('[data-testid="user-greeting"]')).toContainText('Test User');
+    
+    // Step 5: Navigate to profile
+    await page.click('text=Profile');
+    
+    // Step 6: Verify profile information
+    await expect(page).toHaveURL(/profile/);
+    await expect(page.locator('[data-testid="profile-username"]')).toContainText(username);
+    await expect(page.locator('[data-testid="profile-email"]')).toContainText(email);
+    
+    // Step 7: Log out
+    await page.click('text=Log out');
+    
+    // Step 8: Verify logged out state
+    await expect(page).toHaveURL(/login/);
+  });
+
+  test('should show error for invalid registration data', async ({ page }) => {
+    // Attempt to register with invalid data
+    await page.fill('[name="username"]', 'a'); // Too short
+    await page.fill('[name="email"]', 'invalid-email'); // Invalid format
+    await page.fill('[name="password"]', 'short'); // Too short
+    await page.click('button[type="submit"]');
+    
+    // Verify validation errors
+    await expect(page.locator('[data-testid="username-error"]')).toContainText('at least 3 characters');
+    await expect(page.locator('[data-testid="email-error"]')).toContainText('valid email');
+    await expect(page.locator('[data-testid="password-error"]')).toContainText('at least 8 characters');
+    
+    // Verify we're still on registration page
+    await expect(page).toHaveURL(/register/);
+  });
+});
+```
+
+## Best Practices
+
+1. **Use descriptive test names** that explain the behavior being tested
+2. **Follow the AAA pattern** (Arrange, Act, Assert) for clarity
+3. **Test behavior, not implementation** details
+4. **Mock only what's necessary** - prefer real implementations for integration tests
+5. **Keep unit tests fast** and integration tests reliable
+6. **Use data builders** for complex test data setup
+7. **Set up CI pipelines** to run tests on every push
+8. **Add visual regression tests** for UI components when needed
+9. **Measure and maintain coverage** targets
+10. **Include accessibility testing** in E2E tests

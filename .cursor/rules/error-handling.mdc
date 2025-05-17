@@ -1,0 +1,294 @@
+---
+description: 
+globs: src/**/*.ts,src/**/*.tsx
+alwaysApply: false
+---
+# Error Handling Guidelines
+
+This document outlines the standards for error handling throughout the application, focusing on providing proper feedback to users while maintaining a clean user experience.
+
+## Core Principles
+
+1. **Separate API and UI Errors**: Use different approaches for API/async errors versus form validation and other UI errors
+2. **Actionable Messages**: Every error should tell the user what went wrong and how to fix it
+3. **Contextual Feedback**: Display errors in context where they occurred
+4. **Graceful Degradation**: Application should not crash when encountering errors
+
+## Error Handling by Error Type
+
+### API Response Errors
+
+Always use toast notifications for API responses:
+
+```typescript
+// API Service Level
+async function fetchUserProfile(userId: string) {
+  try {
+    const response = await fetch(`/api/users/${userId}`);
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new ApiError(errorData.message, response.status);
+    }
+    return await response.json();
+  } catch (error) {
+    // Let the error propagate up to be handled by the UI
+    throw error;
+  }
+}
+
+// Component Level
+async function handleProfileFetch(userId: string) {
+  try {
+    const userData = await fetchUserProfile(userId);
+    setUserData(userData);
+  } catch (error) {
+    // Display API errors in toast
+    toast.error(`Failed to load profile: ${error.message}`);
+  }
+}
+```
+
+### Form Validation Errors
+
+Always display in the UI next to relevant form fields:
+
+```tsx
+function UserForm() {
+  const { register, handleSubmit, formState: { errors } } = useForm();
+  const [serverErrors, setServerErrors] = useState({});
+  
+  const onSubmit = async (data) => {
+    try {
+      await userService.updateUser(data);
+      toast.success('Profile updated successfully');
+    } catch (error) {
+      if (error.status === 422) {
+        // Validation errors from server - display inline
+        setServerErrors(error.validationErrors);
+      } else {
+        // Other API errors - display in toast
+        toast.error(`Failed to update profile: ${error.message}`);
+      }
+    }
+  };
+  
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <div className="form-group">
+        <label>Username</label>
+        <input {...register('username', { required: true })} />
+        {errors.username && <span className="error">Username is required</span>}
+        {serverErrors.username && <span className="error">{serverErrors.username}</span>}
+      </div>
+      
+      {/* Other form fields... */}
+      
+      <button type="submit">Save</button>
+    </form>
+  );
+}
+```
+
+### System/Application Errors
+
+Use error boundaries for unexpected failures:
+
+```tsx
+// src/shared/components/ErrorBoundary.tsx
+import React from 'react';
+import { logErrorToService } from '@/shared/services/logging';
+
+interface ErrorBoundaryProps {
+  fallback?: React.ReactNode;
+  children: React.ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+}
+
+export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(_: Error): ErrorBoundaryState {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
+    logErrorToService(error, errorInfo);
+  }
+
+  render(): React.ReactNode {
+    if (this.state.hasError) {
+      return this.props.fallback || (
+        <div className="error-container">
+          <h2>Something went wrong.</h2>
+          <p>The application encountered an unexpected error. Please try refreshing the page.</p>
+          <button onClick={() => window.location.reload()}>Refresh</button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+```
+
+## Implementing Toast Notifications
+
+Use a consistent toast notification system:
+
+```tsx
+// src/shared/components/molecules/Toast/ToastProvider.tsx
+import { createContext, useContext, useState } from 'react';
+import Toast from './Toast';
+
+interface ToastContextType {
+  toast: {
+    success: (message: string) => void;
+    error: (message: string) => void;
+    info: (message: string) => void;
+    warning: (message: string) => void;
+  };
+}
+
+const ToastContext = createContext<ToastContextType | undefined>(undefined);
+
+export const ToastProvider = ({ children }) => {
+  const [toasts, setToasts] = useState([]);
+
+  const addToast = (type, message, duration = 5000) => {
+    const id = Date.now();
+    setToasts([...toasts, { id, type, message }]);
+    
+    setTimeout(() => {
+      setToasts((currentToasts) => currentToasts.filter((toast) => toast.id !== id));
+    }, duration);
+  };
+
+  const value = {
+    toast: {
+      success: (message) => addToast('success', message),
+      error: (message) => addToast('error', message),
+      info: (message) => addToast('info', message),
+      warning: (message) => addToast('warning', message),
+    }
+  };
+
+  return (
+    <ToastContext.Provider value={value}>
+      {children}
+      <div className="toast-container">
+        {toasts.map((toast) => (
+          <Toast 
+            key={toast.id}
+            type={toast.type}
+            message={toast.message}
+            onClose={() => setToasts(toasts.filter(t => t.id !== toast.id))}
+          />
+        ))}
+      </div>
+    </ToastContext.Provider>
+  );
+};
+
+export const useToast = () => {
+  const context = useContext(ToastContext);
+  if (context === undefined) {
+    throw new Error('useToast must be used within a ToastProvider');
+  }
+  return context.toast;
+};
+```
+
+## Error Handling in Different Layers
+
+### Domain Layer
+- Throw specific, descriptive error types
+- Include all relevant information in error objects
+
+```typescript
+// features/users/domain/errors/EmailAlreadyExistsError.ts
+export class EmailAlreadyExistsError extends Error {
+  constructor(email: string) {
+    super(`The email ${email} is already registered`);
+    this.name = 'EmailAlreadyExistsError';
+  }
+}
+```
+
+### Application Layer
+- Catch domain errors and transform as needed
+- Add additional context to errors
+
+```typescript
+// features/users/application/useCases/RegisterUserUseCase.ts
+try {
+  await this.userRepository.create(user);
+} catch (error) {
+  if (error instanceof EmailAlreadyExistsError) {
+    throw new ApplicationError(
+      'registration_failed',
+      `A user with this email already exists. Please use a different email or try logging in.`,
+      { originalError: error }
+    );
+  }
+  throw error;
+}
+```
+
+### Infrastructure Layer
+- Convert external errors to application-specific errors
+- Add HTTP status codes when applicable
+
+```typescript
+// features/users/infrastructure/api/UserApiClient.ts
+try {
+  const response = await fetch('/api/users', {
+    method: 'POST',
+    body: JSON.stringify(userData)
+  });
+  
+  if (!response.ok) {
+    const data = await response.json();
+    throw new ApiError(
+      data.message || 'Failed to create user',
+      response.status,
+      data.errors
+    );
+  }
+  
+  return await response.json();
+} catch (error) {
+  if (error instanceof ApiError) throw error;
+  throw new ApiError('Network error', 500);
+}
+```
+
+### Presentation Layer
+- Display errors in appropriate UI elements
+- Log errors for monitoring
+
+```tsx
+// features/users/presentation/components/RegistrationForm.tsx
+async function handleSubmit(data) {
+  try {
+    await registerUser(data);
+    toast.success('Registration successful!');
+    router.push('/login');
+  } catch (error) {
+    if (error.code === 'registration_failed') {
+      // Show in UI for validation-like errors
+      setFormError(error.message);
+    } else {
+      // Show in toast for unexpected errors
+      toast.error(`Registration failed: ${error.message}`);
+      // Log for monitoring
+      logError(error);
+    }
+  }
+}
+```
