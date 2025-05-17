@@ -11,6 +11,7 @@ import {
   BarChart,
   MessageCircle,
   Tag,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/shared/components/atoms/Button';
@@ -52,8 +53,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
     { icon: Home, label: 'User Management', href: '/user-management' },
     { icon: Award, label: 'Kudos', href: '/dashboard/kudos' },
     { icon: Tag, label: 'Kudo Categories', href: '/kudo-categories' },
+    { icon: Users, label: 'Teams', href: '/teams' },
     { icon: MessageCircle, label: 'Messages', href: '/dashboard/messages' },
-    { icon: Users, label: 'Team', href: '/dashboard/team' },
+    { icon: UserPlus, label: 'Team', href: '/dashboard/team' },
     { icon: BarChart, label: 'Analytics', href: '/dashboard/analytics' },
     { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
   ];
