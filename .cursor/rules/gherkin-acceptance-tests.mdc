@@ -11,6 +11,14 @@ alwaysApply: false
 - Step definitions should be in `features/step_definitions/`
 - Support files (hooks, world) should be in `features/support/`
 
+## Test Case Creation Guidelines
+- Create test cases in `.md` files first, not in cursor rules
+- Focus on writing test scenarios before any implementation
+- Keep test cases separate from implementation details
+- Document all scenarios in Gherkin format
+- Include all possible test cases and edge cases
+- Review test cases for completeness before implementation
+
 ## Feature File Structure
 ```gherkin
 Feature: Feature Name
