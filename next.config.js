@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {
+export default {
   /* config options here */
   reactStrictMode: true,
   async headers() {
@@ -29,5 +29,3 @@ const nextConfig = {
     ];
   },
 };
-
-export default nextConfig;
