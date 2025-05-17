@@ -44,6 +44,7 @@ export const UserManagementProvider: React.FC<{ children: React.ReactNode }> = (
   const router = useRouter();
   const { orgId } = router.query;
   const organizationId = Array.isArray(orgId) ? orgId[0] : orgId;
+  const [isRouterReady, setIsRouterReady] = useState(false);
 
   // Create repository and use cases only once using refs
   const repositoryRef = useRef<UserManagementRepository>(new UserManagementRepository());
@@ -69,10 +70,24 @@ export const UserManagementProvider: React.FC<{ children: React.ReactNode }> = (
   const [error, setError] = useState<Error | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
+  // Check if router is ready with query parameters
+  useEffect(() => {
+    if (router.isReady) {
+      setIsRouterReady(true);
+    }
+  }, [router.isReady]);
+
+  // Fetch users automatically when orgId becomes available
+  useEffect(() => {
+    if (isRouterReady && organizationId) {
+      fetchUsers();
+    }
+  }, [isRouterReady, organizationId]);
+
   // Fetch users with pagination and sorting
   const fetchUsers = useCallback(
     async (params?: Partial<GetUsersInputDto>) => {
-      // Ensure we have an organizationId
+      // Ensure we have an organizationId and router is ready
       if (!organizationId) {
         setError(new Error('Organization ID is required to fetch users'));
         console.error('Missing organization ID');
@@ -141,6 +156,11 @@ export const UserManagementProvider: React.FC<{ children: React.ReactNode }> = (
   // Invite users with emails and organization ID
   const inviteUsers = useCallback(
     async (emails: string[]) => {
+      if (!organizationId) {
+        setError(new Error('Organization ID is required to invite users'));
+        throw new Error('Missing organization ID');
+      }
+
       setIsLoading(true);
       setError(null);
 
