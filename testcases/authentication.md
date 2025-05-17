@@ -40,6 +40,75 @@ Scenario: Signup with invalid email format
   And I click the signup button
   Then I should see an error message "Please enter a valid email address"
   And I should remain on the authentication page
+
+Scenario: Login with invalid email format
+  Given I am an existing user
+  When I enter "invalid-email" in the email field
+  And I click the login button
+  Then I should see an error message "Please enter a valid email address"
+  And I should remain on the authentication page
+
+Scenario: Login with email containing spaces
+  Given I am an existing user
+  When I enter "john.doe @example.com" in the email field
+  And I click the login button
+  Then I should see an error message "Please enter a valid email address"
+  And I should remain on the authentication page
+
+Scenario: Login with email missing @ symbol
+  Given I am an existing user
+  When I enter "john.doeexample.com" in the email field
+  And I click the login button
+  Then I should see an error message "Please enter a valid email address"
+  And I should remain on the authentication page
+
+Scenario: Login with email missing domain
+  Given I am an existing user
+  When I enter "john.doe@" in the email field
+  And I click the login button
+  Then I should see an error message "Please enter a valid email address"
+  And I should remain on the authentication page
+```
+
+#### 1.3 Name Length Validation
+```gherkin
+Scenario: First name exceeds 40 characters
+  Given I am a new user
+  When I enter "ThisIsAVeryLongFirstNameThatExceedsFortyCharacters" in the first name field
+  And I enter "Doe" in the last name field
+  And I enter "john.doe@example.com" in the email field
+  And I click the signup button
+  Then I should see an error message "First name should be less than 40 characters"
+  And I should remain on the authentication page
+
+Scenario: Last name exceeds 40 characters
+  Given I am a new user
+  When I enter "John" in the first name field
+  And I enter "ThisIsAVeryLongLastNameThatExceedsFortyCharacters" in the last name field
+  And I enter "john.doe@example.com" in the email field
+  And I click the signup button
+  Then I should see an error message "Last name should be less than 40 characters"
+  And I should remain on the authentication page
+
+Scenario: Both names exceed 40 characters
+  Given I am a new user
+  When I enter "ThisIsAVeryLongFirstNameThatExceedsFortyCharacters" in the first name field
+  And I enter "ThisIsAVeryLongLastNameThatExceedsFortyCharacters" in the last name field
+  And I enter "john.doe@example.com" in the email field
+  And I click the signup button
+  Then I should see an error message "First name should be less than 40 characters"
+  And I should see an error message "Last name should be less than 40 characters"
+  And I should remain on the authentication page
+
+Scenario: Name length exceeds 40 characters
+  Given I am a new user
+  When I enter "ThisIsAVeryLongFirstNameThatExceedsFortyCharacters" in the first name field
+  And I enter "ThisIsAVeryLongLastNameThatExceedsFortyCharacters" in the last name field
+  And I enter "john.doe@example.com" in the email field
+  And I click the signup button
+  Then I should see an error message "First name should be less than 40 characters"
+  And I should see an error message "Last name should be less than 40 characters"
+  And I should remain on the authentication page
 ```
 
 #### 1.3 Input Format Validation
@@ -225,6 +294,46 @@ Scenario: Copy OTP functionality
   And the login button should be enabled
 ```
 
+#### 3.4 OTP Attempt Limits
+```gherkin
+Scenario: First invalid OTP attempt
+  Given I am on the OTP verification page
+  And I have received an OTP
+  When I enter "1111" in the OTP field
+  And I click the login button
+  Then I should see an error message "Invalid OTP"
+  And I should remain on the OTP verification page
+  And I should see "2 attempts remaining"
+
+Scenario: Second invalid OTP attempt
+  Given I am on the OTP verification page
+  And I have received an OTP
+  And I have already made 1 invalid attempt
+  When I enter "2222" in the OTP field
+  And I click the login button
+  Then I should see an error message "Invalid OTP"
+  And I should remain on the OTP verification page
+  And I should see "1 attempt remaining"
+
+Scenario: Third invalid OTP attempt - redirect to login
+  Given I am on the OTP verification page
+  And I have received an OTP
+  And I have already made 2 invalid attempts
+  When I enter "3333" in the OTP field
+  And I click the login button
+  Then I should see an error message "Maximum OTP attempts exceeded"
+  And I should be redirected to the login page
+  And I should see a message "Please try logging in again"
+
+Scenario: Reset OTP attempts on new OTP request
+  Given I am on the OTP verification page
+  And I have already made 2 invalid attempts
+  When I click the resend OTP button
+  Then a new OTP should be sent to my email
+  And the attempt counter should be reset
+  And I should see "3 attempts remaining"
+```
+
 ### 4. Page Refresh Tests
 
 #### 4.1 Form State Management
@@ -284,6 +393,23 @@ Scenario: Existing user login with valid email
   And an OTP should be sent to "john.doe@example.com"
 ```
 
+### 6. Duplicate Registration Test
+
+```gherkin
+Scenario: Attempt to register with existing email
+  Given I am a new user
+  When I enter "John" in the first name field
+  And I enter "Doe" in the last name field
+  And I enter "john.doe@example.com" in the email field
+  And the email "john.doe@example.com" is already registered
+  And I click the signup button
+  Then I should see an error message "This email is already registered. Please login instead"
+  And I should see a "Login" button
+  And I should remain on the authentication page
+  And the email field should be cleared
+  And other form fields should retain their values
+```
+
 ## Test Coverage Summary
 1. Form Validation
    - Required fields
@@ -308,4 +434,7 @@ Scenario: Existing user login with valid email
 5. Success Flows
    - New user registration
    - Existing user login
-   - OTP verification 
+   - OTP verification
+
+6. Duplicate Registration
+   - Email already registered handling 
