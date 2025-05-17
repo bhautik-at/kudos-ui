@@ -210,13 +210,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAuthLoading(true);
 
     try {
+      // Clear token first to prevent any additional API calls
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('kudos_user_id');
+        // Clear auth token in HttpService
+        httpService.clearAuthToken();
+      }
+
+      // Call the logout API endpoint
       await authRepository.logout();
 
       // Clear auth state
       setAwaitingOtpVerification(false);
 
-      // Redirect to login page
-      router.push('/');
+      // Redirect to login page - but don't use router.push as that can trigger additional API calls
+      // Allow the component calling logout to handle the redirect
     } catch (error: any) {
       setError(error.message || 'Failed to log out');
     } finally {

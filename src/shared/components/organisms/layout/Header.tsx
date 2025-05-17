@@ -11,6 +11,9 @@ import {
   TooltipTrigger,
 } from '@/shared/components/atoms/Tooltip';
 import { useUser } from '@/features/users/presentation/contexts/UserContext';
+import { toastService } from '@/shared/services/toast';
+import { useRouter } from 'next/router';
+import { httpService } from '@/shared/services/http/HttpService';
 
 interface HeaderProps {
   className?: string;
@@ -26,9 +29,11 @@ export const Header: React.FC<HeaderProps> = ({
   isMobile = false,
 }) => {
   const { logout } = useAuth();
-  const { user } = useUser();
+  const { user, setUserFromAuth } = useUser();
+  const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchValue, setSearchValue] = useState('');
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Get user initial for avatar
@@ -50,9 +55,52 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleLogout = async () => {
     try {
+      setIsLoggingOut(true);
+      setShowUserMenu(false);
+
+      // Clear user data immediately to prevent auto-fetching
+      setUserFromAuth(null);
+
+      // Clear userId from localStorage immediately
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('kudos_user_id');
+      }
+
+      // Clear authentication token to prevent further API calls
+      httpService.clearAuthToken();
+
+      // Show logout in progress toast
+      toastService.info('Logging out...', 'Please wait');
+
+      // Call the Auth service logout
       await logout();
+
+      // Show success message
+      toastService.success('Logged out successfully');
+
+      // Use window.location.href for a full page reload to clear any state
+      window.location.href = '/';
+
+      // Prevention: Don't continue executing after redirect
+      return;
     } catch (error) {
       console.error('Logout failed:', error);
+
+      // Show error toast
+      toastService.error(
+        'Logout failed',
+        error instanceof Error ? error.message : 'An unexpected error occurred'
+      );
+
+      // Still clear user data and localStorage even if API fails
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('kudos_user_id');
+      }
+
+      // Force redirect to login page anyway
+      window.location.href = '/';
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 
@@ -165,9 +213,10 @@ export const Header: React.FC<HeaderProps> = ({
                 onClick={handleLogout}
                 variant="ghost"
                 className="flex w-full items-center justify-start px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                disabled={isLoggingOut}
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Logout
+                {isLoggingOut ? 'Logging out...' : 'Logout'}
               </Button>
             </div>
           </div>

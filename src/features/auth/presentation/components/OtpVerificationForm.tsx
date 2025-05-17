@@ -69,6 +69,11 @@ export const OtpVerificationForm = () => {
         console.log('OTP verification successful, preparing to navigate to dashboard...');
         toastService.success('Verification Successful', 'Redirecting to dashboard...');
 
+        // Store userId in localStorage if available
+        if (result.user?.id) {
+          localStorage.setItem('kudos_user_id', result.user.id);
+        }
+
         // Add a short delay to ensure auth state is updated
         // and toast is displayed before navigation
         setTimeout(() => {
