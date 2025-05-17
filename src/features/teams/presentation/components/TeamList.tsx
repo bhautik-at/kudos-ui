@@ -67,7 +67,7 @@ export function TeamList({ organizationId }: TeamListProps) {
         ) : (
           <div className="space-y-4">
             {teams.map(team => (
-              <TeamItem key={team.id} team={team} onTeamUpdated={handleTeamUpdated} />
+              <TeamItem key={team.id} team={team as any} onTeamUpdated={handleTeamUpdated} />
             ))}
           </div>
         )}

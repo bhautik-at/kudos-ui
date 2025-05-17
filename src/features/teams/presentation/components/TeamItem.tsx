@@ -7,10 +7,10 @@ import { EditTeamModal } from './EditTeamModal';
 import { DeleteTeamModal } from './DeleteTeamModal';
 import { useTeamMembers } from '../hooks/useTeamMembers';
 
-// Create a type to handle both cases
-type TeamItemTeam =
-  | TeamOutputDto
-  | (TeamOutputDto & { members: TeamMemberWithUserInfoOutputDto[] });
+// Define a type that can be either TeamOutputDto or a team with TeamMemberWithUserInfoOutputDto[] members
+type TeamItemTeam = Omit<TeamOutputDto, 'members'> & {
+  members?: string[] | TeamMemberWithUserInfoOutputDto[];
+};
 
 interface TeamItemProps {
   team: TeamItemTeam;
@@ -23,17 +23,19 @@ export function TeamItem({ team, onTeamUpdated }: TeamItemProps) {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Use provided members if available, otherwise fetch them
+  // Check if members property exists and contains array of objects (not strings)
   const hasMembers =
     'members' in team &&
     Array.isArray(team.members) &&
     team.members.length > 0 &&
     typeof team.members[0] !== 'string';
+
+  // Fetch team members if not provided
   const { teamMembers, isLoading } = useTeamMembers(team.id, !hasMembers);
 
-  // Use the appropriate members array
+  // Use the provided members if they're objects, otherwise use fetched members
   const displayMembers = hasMembers
-    ? (team as TeamOutputDto & { members: TeamMemberWithUserInfoOutputDto[] }).members
+    ? (team.members as TeamMemberWithUserInfoOutputDto[])
     : teamMembers;
 
   const toggleMembers = () => {
@@ -101,20 +103,40 @@ export function TeamItem({ team, onTeamUpdated }: TeamItemProps) {
         )}
       </Card>
 
-      {/* Edit Team Modal */}
+      {/* Edit Team Modal - Cast team to TeamOutputDto */}
       {isEditModalOpen && (
         <EditTeamModal
-          team={team}
+          team={{
+            id: team.id,
+            name: team.name,
+            organizationId: team.organizationId,
+            createdBy: team.createdBy,
+            createdAt: team.createdAt,
+            updatedAt: team.updatedAt,
+            members:
+              Array.isArray(team.members) &&
+              team.members.length > 0 &&
+              typeof team.members[0] === 'string'
+                ? (team.members as string[])
+                : undefined,
+          }}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
           onTeamUpdated={onTeamUpdated}
         />
       )}
 
-      {/* Delete Team Modal */}
+      {/* Delete Team Modal - Cast team to TeamOutputDto */}
       {isDeleteModalOpen && (
         <DeleteTeamModal
-          team={team}
+          team={{
+            id: team.id,
+            name: team.name,
+            organizationId: team.organizationId,
+            createdBy: team.createdBy,
+            createdAt: team.createdAt,
+            updatedAt: team.updatedAt,
+          }}
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
           onTeamDeleted={onTeamUpdated}
