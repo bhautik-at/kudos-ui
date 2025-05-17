@@ -33,6 +33,10 @@ export const OtpVerificationForm = () => {
   const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(false);
 
+  // Get invite code from URL
+  const inviteCode = router.query.inviteCode as string | undefined;
+  const hasInviteCode = !!inviteCode;
+
   const form = useForm<OtpFormValues>({
     resolver: zodResolver(otpFormSchema),
     defaultValues: {
@@ -66,8 +70,8 @@ export const OtpVerificationForm = () => {
       const result = await verifyOtp(currentEmail, values.otp);
 
       if (result.success) {
-        console.log('OTP verification successful, preparing to navigate to dashboard...');
-        toastService.success('Verification Successful', 'Redirecting to dashboard...');
+        console.log('OTP verification successful');
+        toastService.success('Verification Successful', 'Redirecting...');
 
         // Store userId in localStorage if available
         if (result.user?.id) {
@@ -77,21 +81,20 @@ export const OtpVerificationForm = () => {
         // Add a short delay to ensure auth state is updated
         // and toast is displayed before navigation
         setTimeout(() => {
-          console.log('Navigating to dashboard now...');
-
-          // Try both navigation methods for maximum reliability
-          try {
+          if (isSignup) {
+            // For new user signups, check if they have an invite code
+            if (hasInviteCode && inviteCode) {
+              console.log('Invite code found, navigating to dashboard with invite code...');
+              router.push(`/dashboard?inviteCode=${inviteCode}`);
+            } else {
+              // No invite code - redirect to organization creation page
+              console.log('No invite code found, navigating to organization creation...');
+              router.push('/organization');
+            }
+          } else {
+            // For existing users (login flow), go straight to dashboard
+            console.log('Login flow, navigating to dashboard...');
             router.push('/dashboard');
-
-            // As a fallback, also use window.location after a slight delay
-            // if router.push doesn't work
-            setTimeout(() => {
-              console.log('Fallback navigation with window.location...');
-              window.location.href = '/dashboard';
-            }, 500);
-          } catch (navError) {
-            console.error('Router navigation failed, using direct location:', navError);
-            window.location.href = '/dashboard';
           }
         }, 1000);
       } else {

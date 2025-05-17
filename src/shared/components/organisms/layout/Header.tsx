@@ -206,7 +206,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white border border-gray-200 z-50">
             <div className="p-4 space-y-1">
               <div className="text-sm font-medium">Hi {user?.firstName || 'User'}!</div>
-              <div className="text-xs text-gray-500">{user?.email}</div>
+              <div className="text-xs text-gray-500 truncate">{user?.email}</div>
             </div>
             <div className="border-t border-gray-200">
               <Button
