@@ -10,6 +10,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/shared/components/atoms/Tooltip';
+import { useUser } from '@/features/users/presentation/contexts/UserContext';
 
 interface HeaderProps {
   className?: string;
@@ -24,7 +25,8 @@ export const Header: React.FC<HeaderProps> = ({
   showMenuButton = false,
   isMobile = false,
 }) => {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const { user } = useUser();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchValue, setSearchValue] = useState('');
   const userMenuRef = useRef<HTMLDivElement>(null);
