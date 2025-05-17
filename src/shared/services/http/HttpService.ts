@@ -1,6 +1,7 @@
 import { IHttpService, IHttpOptions } from './interfaces/IHttpService';
 import { IHttpResponse } from './interfaces/IHttpResponse';
 import { HttpError } from './HttpError';
+import config from '@/lib/config';
 
 type InterceptorFunction = (error: any) => Promise<any>;
 
@@ -12,9 +13,11 @@ export class HttpService implements IHttpService {
   };
   private interceptors: Map<number, InterceptorFunction> = new Map();
   private interceptorId: number = 0;
+  private isServer: boolean = false;
 
   constructor(baseUrl: string = '') {
-    this.baseUrl = baseUrl;
+    this.baseUrl = baseUrl || config.api.baseUrl;
+    this.isServer = typeof window === 'undefined';
   }
 
   /**
@@ -35,6 +38,14 @@ export class HttpService implements IHttpService {
    * Add auth header for authenticated requests
    */
   setAuthToken(token: string): void {
+    if (this.isServer) {
+      // Don't store tokens in server memory to avoid leaking across requests
+      // Just for this request it's added to headers
+      this.defaultHeaders['Authorization'] = `Bearer ${token}`;
+      return;
+    }
+
+    // In browser, store in default headers
     this.defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 
@@ -63,12 +74,26 @@ export class HttpService implements IHttpService {
   }
 
   /**
+   * Get default request options that should be applied to all requests
+   */
+  private getDefaultOptions(): IHttpOptions {
+    return {
+      withCredentials: true,
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    };
+  }
+
+  /**
    * Perform a GET request
    */
   async get<T = any>(url: string, options?: IHttpOptions): Promise<IHttpResponse<T>> {
     return this.request<T>({
       method: 'GET',
       url,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -85,6 +110,7 @@ export class HttpService implements IHttpService {
       method: 'POST',
       url,
       data,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -101,6 +127,7 @@ export class HttpService implements IHttpService {
       method: 'PUT',
       url,
       data,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -117,6 +144,7 @@ export class HttpService implements IHttpService {
       method: 'PATCH',
       url,
       data,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -128,6 +156,7 @@ export class HttpService implements IHttpService {
     return this.request<T>({
       method: 'DELETE',
       url,
+      ...this.getDefaultOptions(),
       ...options,
     });
   }
@@ -136,7 +165,15 @@ export class HttpService implements IHttpService {
    * Core request method that all other methods use
    */
   async request<T = any>(config: any): Promise<IHttpResponse<T>> {
-    const { method = 'GET', url, data, headers = {}, params, timeout, withCredentials } = config;
+    const {
+      method = 'GET',
+      url,
+      data,
+      headers = {},
+      params,
+      timeout,
+      withCredentials = true,
+    } = config;
 
     // Build URL with any query parameters
     const fullUrl = this.buildUrl(url, params);

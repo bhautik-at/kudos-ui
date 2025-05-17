@@ -8,6 +8,7 @@ import type { ToastActionElement } from '@/components/ui/toast';
  */
 export class ToastService implements IToastService {
   private static instance: ToastService;
+  private defaultDuration = 3000; // 3 seconds
 
   private constructor() {}
 
@@ -48,7 +49,7 @@ export class ToastService implements IToastService {
       title,
       description,
       action,
-      duration: options?.duration,
+      duration: options?.duration || this.defaultDuration,
       className:
         actualType !== 'default' && actualType !== 'destructive' ? `toast-${actualType}` : '',
       ...options,
