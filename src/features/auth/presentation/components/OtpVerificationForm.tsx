@@ -34,8 +34,10 @@ export const OtpVerificationForm = () => {
   const [canResend, setCanResend] = useState<boolean>(false);
 
   // Get invite code from URL
-  const inviteCode = router.query.inviteCode as string | undefined;
-  const hasInviteCode = !!inviteCode;
+  const invite = router.query.invite as string | undefined;
+  const orgId = router.query.orgId as string | undefined;
+  const hasInvite = !!invite;
+  const hasOrgId = !!orgId;
 
   const form = useForm<OtpFormValues>({
     resolver: zodResolver(otpFormSchema),
@@ -66,11 +68,9 @@ export const OtpVerificationForm = () => {
   const onSubmit = async (values: OtpFormValues) => {
     clearError();
     try {
-      console.log('Verifying OTP...');
       const result = await verifyOtp(currentEmail, values.otp);
 
       if (result.success) {
-        console.log('OTP verification successful');
         toastService.success('Verification Successful', 'Redirecting...');
 
         // Store userId in localStorage if available
@@ -81,29 +81,31 @@ export const OtpVerificationForm = () => {
         // Add a short delay to ensure auth state is updated
         // and toast is displayed before navigation
         setTimeout(() => {
-          if (isSignup) {
-            // For new user signups, check if they have an invite code
-            if (hasInviteCode && inviteCode) {
-              console.log('Invite code found, navigating to dashboard with invite code...');
-              router.push(`/dashboard?inviteCode=${inviteCode}`);
-            } else {
-              // No invite code - redirect to organization creation page
-              console.log('No invite code found, navigating to organization creation...');
-              router.push('/organization');
-            }
+          // If we have invite or orgId, always redirect to dashboard with those params
+          if (hasInvite || hasOrgId) {
+            const queryParams = new URLSearchParams();
+            if (invite) queryParams.append('invite', invite);
+            if (orgId) queryParams.append('orgId', orgId);
+
+            const queryString = queryParams.toString();
+            const redirectUrl = `/dashboard?${queryString}`;
+            router.push(redirectUrl);
           } else {
-            // For existing users (login flow), go straight to dashboard
-            console.log('Login flow, navigating to dashboard...');
-            router.push('/dashboard');
+            // No invite or orgId
+            if (isSignup) {
+              // New user - redirect to organization creation
+              router.push('/organization');
+            } else {
+              // Existing user - redirect to organization selection
+              router.push('/organizations');
+            }
           }
         }, 1000);
       } else {
-        console.log('OTP verification failed:', result.message);
         toastService.error('Verification Failed', result.message);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred';
-      console.error('OTP verification error:', err);
       toastService.error('Verification Error', errorMessage);
     }
   };

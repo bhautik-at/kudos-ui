@@ -25,7 +25,12 @@ const signupFormSchema = z.object({
 
 type SignupFormValues = z.infer<typeof signupFormSchema>;
 
-export const SignupForm = () => {
+interface SignupFormProps {
+  invite?: string;
+  orgId?: string;
+}
+
+export const SignupForm = ({ invite, orgId }: SignupFormProps) => {
   const { signup, isAuthLoading, clearError } = useAuth();
   const { navigateToLogin } = useAuthNavigation();
 
@@ -139,7 +144,7 @@ export const SignupForm = () => {
             <button
               type="button"
               className="text-blue-600 hover:underline"
-              onClick={navigateToLogin}
+              onClick={() => navigateToLogin(invite, orgId)}
             >
               Log in
             </button>

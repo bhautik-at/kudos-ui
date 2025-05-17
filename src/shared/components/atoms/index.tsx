@@ -4,3 +4,6 @@ export * from './Input';
 export * from './Tooltip';
 export * from './ScrollArea';
 export * from './Sheet';
+export * from './Select';
+export * from './Label';
+export * from './Spinner';
