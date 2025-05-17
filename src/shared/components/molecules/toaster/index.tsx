@@ -65,6 +65,7 @@ export function Toaster() {
             </div>
             {action}
             {/* <ToastClose /> */}
+            <ToastClose className="absolute right-2 top-2 h-6 w-6 cursor-pointer rounded-full bg-gray-200 text-gray-800 hover:bg-gray-300 flex items-center justify-center" />
           </Toast>
         );
       })}

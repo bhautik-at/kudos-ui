@@ -79,7 +79,7 @@ export const ToastClose = forwardRef<
   <ShadcnToastClose
     ref={ref}
     className={cn(
-      'rounded-full p-1 opacity-70 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2',
+      'rounded-full p-1 opacity-100 transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-offset-2',
       className
     )}
     {...props}
