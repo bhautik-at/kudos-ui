@@ -13,11 +13,15 @@ export const Label = forwardRef<HTMLLabelElement, LabelProps>(
     return (
       <ShadcnLabel
         ref={ref}
-        className={cn('transition-colors', error && 'text-red-500', className)}
+        className={cn(
+          'text-foreground font-medium transition-colors',
+          error && 'text-destructive',
+          className
+        )}
         {...props}
       >
         {children}
-        {required && <span className="text-red-500 ml-1">*</span>}
+        {required && <span className="text-destructive ml-1">*</span>}
       </ShadcnLabel>
     );
   }

@@ -1,6 +1,7 @@
 import { IHttpService, IHttpOptions } from './interfaces/IHttpService';
 import { IHttpResponse } from './interfaces/IHttpResponse';
 import { HttpError } from './HttpError';
+import config from '@/lib/config';
 
 type InterceptorFunction = (error: any) => Promise<any>;
 
@@ -14,7 +15,7 @@ export class HttpService implements IHttpService {
   private interceptorId: number = 0;
 
   constructor(baseUrl: string = '') {
-    this.baseUrl = baseUrl;
+    this.baseUrl = baseUrl || config.api.baseUrl;
   }
 
   /**

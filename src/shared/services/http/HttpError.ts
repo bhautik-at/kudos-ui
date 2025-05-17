@@ -5,12 +5,12 @@ export class HttpError extends Error {
   public readonly url: string;
 
   constructor(status: number, statusText: string, url: string, data?: any) {
-    super(`HTTP Error ${status}: ${statusText}`);
+    super(statusText);
     this.name = 'HttpError';
     this.status = status;
     this.statusText = statusText;
-    this.data = data;
     this.url = url;
+    this.data = data;
   }
 
   // Helper methods for error categorization

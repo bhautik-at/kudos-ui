@@ -3,18 +3,18 @@ import { NextPage } from 'next';
 import { AuthTemplate } from '@/features/auth/presentation/templates';
 import { AuthFormContainer } from '@/features/auth/presentation/components';
 
-const HomePage: NextPage = () => {
+const SignupPage: NextPage = () => {
   return (
     <>
       <Head>
-        <title>Log In | Your App</title>
-        <meta name="description" content="Log in to your account" />
+        <title>Sign Up | Your App</title>
+        <meta name="description" content="Create a new account" />
       </Head>
       <AuthTemplate>
-        <AuthFormContainer initialForm="login" />
+        <AuthFormContainer initialForm="signup" />
       </AuthTemplate>
     </>
   );
 };
 
-export default HomePage;
+export default SignupPage;

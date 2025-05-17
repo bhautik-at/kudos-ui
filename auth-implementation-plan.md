@@ -12,7 +12,17 @@ This document outlines the implementation plan for authentication in our applica
 
 ### Email OTP Authentication Flow
 
-1. User enters personal information (first name, last name, email) or just email for existing users
+#### Signup Flow
+
+1. User enters personal information (first name, last name, email)
+2. Backend generates a 4-digit OTP and sends it to the user's email
+3. User enters the OTP in the verification form
+4. OTP is verified by the backend
+5. Upon successful verification, user is authenticated and redirected to the dashboard
+
+#### Login Flow
+
+1. User enters email
 2. Backend generates a 4-digit OTP and sends it to the user's email
 3. User enters the OTP in the verification form
 4. OTP is verified by the backend
@@ -45,14 +55,16 @@ src/
 │       │
 │       ├── application/
 │       │   ├── dtos/
-│       │   │   ├── InitiateAuthDto.ts
+│       │   │   ├── SignupDto.ts
+│       │   │   ├── LoginDto.ts
 │       │   │   ├── VerifyOtpDto.ts
 │       │   │   ├── ResendOtpDto.ts
 │       │   │   └── GoogleAuthDto.ts
 │       │   ├── mappers/
 │       │   │   └── AuthMapper.ts
 │       │   └── useCases/
-│       │       ├── InitiateAuthUseCase.ts
+│       │       ├── SignupUseCase.ts
+│       │       ├── LoginUseCase.ts
 │       │       ├── VerifyOtpUseCase.ts
 │       │       ├── ResendOtpUseCase.ts
 │       │       └── GoogleAuthUseCase.ts
@@ -134,13 +146,17 @@ export class OtpRequest {
 ```typescript
 // features/auth/domain/interfaces/IAuthRepository.ts
 export interface IAuthRepository {
-  initiateAuth(
+  signup(
     email: string,
-    firstName?: string,
-    lastName?: string
+    firstName: string,
+    lastName: string
   ): Promise<{
     success: boolean;
-    isNewUser: boolean;
+    message: string;
+  }>;
+
+  login(email: string): Promise<{
+    success: boolean;
     message: string;
   }>;
 
@@ -182,16 +198,26 @@ export interface IAuthRepository {
 #### DTOs
 
 ```typescript
-// features/auth/application/dtos/InitiateAuthDto.ts
-export interface InitiateAuthInputDto {
+// features/auth/application/dtos/SignupDto.ts
+export interface SignupInputDto {
   email: string;
-  firstName?: string;
-  lastName?: string;
+  firstName: string;
+  lastName: string;
 }
 
-export interface InitiateAuthOutputDto {
+export interface SignupOutputDto {
   success: boolean;
-  isNewUser: boolean;
+  email: string;
+  message: string;
+}
+
+// features/auth/application/dtos/LoginDto.ts
+export interface LoginInputDto {
+  email: string;
+}
+
+export interface LoginOutputDto {
+  success: boolean;
   email: string;
   message: string;
 }
@@ -234,16 +260,16 @@ export interface GoogleAuthOutputDto {
 #### Use Cases
 
 ```typescript
-// features/auth/application/useCases/InitiateAuthUseCase.ts
+// features/auth/application/useCases/SignupUseCase.ts
 import { IAuthRepository } from '../../domain/interfaces/IAuthRepository';
-import { InitiateAuthInputDto, InitiateAuthOutputDto } from '../dtos/InitiateAuthDto';
+import { SignupInputDto, SignupOutputDto } from '../dtos/SignupDto';
 
-export class InitiateAuthUseCase {
+export class SignupUseCase {
   constructor(private authRepository: IAuthRepository) {}
 
-  async execute(input: InitiateAuthInputDto): Promise<InitiateAuthOutputDto> {
+  async execute(input: SignupInputDto): Promise<SignupOutputDto> {
     try {
-      const response = await this.authRepository.initiateAuth(
+      const response = await this.authRepository.signup(
         input.email,
         input.firstName,
         input.lastName
@@ -251,23 +277,45 @@ export class InitiateAuthUseCase {
 
       return {
         success: true,
-        isNewUser: response.isNewUser,
         email: input.email,
         message: response.message,
       };
     } catch (error) {
       return {
         success: false,
-        isNewUser: false,
         email: input.email,
-        message: error.message || 'Failed to initiate authentication',
+        message: error.message || 'Failed to initiate signup',
       };
     }
   }
 }
-```
 
-```typescript
+// features/auth/application/useCases/LoginUseCase.ts
+import { IAuthRepository } from '../../domain/interfaces/IAuthRepository';
+import { LoginInputDto, LoginOutputDto } from '../dtos/LoginDto';
+
+export class LoginUseCase {
+  constructor(private authRepository: IAuthRepository) {}
+
+  async execute(input: LoginInputDto): Promise<LoginOutputDto> {
+    try {
+      const response = await this.authRepository.login(input.email);
+
+      return {
+        success: true,
+        email: input.email,
+        message: response.message,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        email: input.email,
+        message: error.message || 'Failed to initiate login',
+      };
+    }
+  }
+}
+
 // features/auth/application/useCases/VerifyOtpUseCase.ts
 import { IAuthRepository } from '../../domain/interfaces/IAuthRepository';
 import { VerifyOtpInputDto, VerifyOtpOutputDto } from '../dtos/VerifyOtpDto';
@@ -291,9 +339,7 @@ export class VerifyOtpUseCase {
     }
   }
 }
-```
 
-```typescript
 // features/auth/application/useCases/ResendOtpUseCase.ts
 import { IAuthRepository } from '../../domain/interfaces/IAuthRepository';
 import { ResendOtpInputDto, ResendOtpOutputDto } from '../dtos/ResendOtpDto';
@@ -319,9 +365,7 @@ export class ResendOtpUseCase {
     }
   }
 }
-```
 
-```typescript
 // features/auth/application/useCases/GoogleAuthUseCase.ts
 import { IAuthRepository } from '../../domain/interfaces/IAuthRepository';
 import { GoogleAuthInputDto, GoogleAuthOutputDto } from '../dtos/GoogleAuthDto';
@@ -356,10 +400,8 @@ export class GoogleAuthUseCase {
 // features/auth/infrastructure/api/AuthApiClient.ts
 import { httpService, HttpError } from '@/shared/services';
 
-interface InitiateAuthResponse {
+interface AuthResponse {
   success: boolean;
-  isNewUser: boolean;
-  email: string;
   message: string;
 }
 
@@ -378,28 +420,35 @@ interface ResendOtpResponse {
 export class AuthApiClient {
   private baseUrl = '/auth'; // Auth API path
 
-  async initiateAuth(
-    email: string,
-    firstName?: string,
-    lastName?: string
-  ): Promise<InitiateAuthResponse> {
+  async signup(email: string, firstName: string, lastName: string): Promise<AuthResponse> {
     try {
-      const payload = { email };
-
-      // Add firstName and lastName if provided
-      if (firstName) payload['firstName'] = firstName;
-      if (lastName) payload['lastName'] = lastName;
-
-      const response = await httpService.post<InitiateAuthResponse>(
-        `${this.baseUrl}/initiate`,
-        payload,
+      const response = await httpService.post<AuthResponse>(
+        `${this.baseUrl}/signup`,
+        { email, firstName, lastName },
         { withCredentials: true }
       );
 
       return response.data;
     } catch (error) {
       if (error instanceof HttpError) {
-        throw new Error(error.data?.message || 'Failed to initiate authentication');
+        throw new Error(error.data?.message || 'Failed to signup');
+      }
+      throw error;
+    }
+  }
+
+  async login(email: string): Promise<AuthResponse> {
+    try {
+      const response = await httpService.post<AuthResponse>(
+        `${this.baseUrl}/login`,
+        { email },
+        { withCredentials: true }
+      );
+
+      return response.data;
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw new Error(error.data?.message || 'Failed to login');
       }
       throw error;
     }
@@ -492,13 +541,13 @@ export class AuthRepository implements IAuthRepository {
     this.googleAuthClient = new GoogleAuthClient();
   }
 
-  async initiateAuth(
+  async signup(
     email: string,
-    firstName?: string,
-    lastName?: string
-  ): Promise<{ success: boolean; isNewUser: boolean; message: string }> {
+    firstName: string,
+    lastName: string
+  ): Promise<{ success: boolean; message: string }> {
     try {
-      const response = await this.authApiClient.initiateAuth(email, firstName, lastName);
+      const response = await this.authApiClient.signup(email, firstName, lastName);
 
       if (!response.success) {
         throw new Error(response.message);
@@ -506,7 +555,23 @@ export class AuthRepository implements IAuthRepository {
 
       return {
         success: true,
-        isNewUser: response.isNewUser,
+        message: response.message,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  async login(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await this.authApiClient.login(email);
+
+      if (!response.success) {
+        throw new Error(response.message);
+      }
+
+      return {
+        success: true,
         message: response.message,
       };
     } catch (error) {
@@ -1057,28 +1122,42 @@ We'll use test environment mocks for:
 
 The following endpoints need to be implemented in the external backend:
 
-1. **Request OTP**
+1. **Signup with OTP**
+
+   - Endpoint: `POST /api/auth/signup`
+   - Payload: `{ email, firstName, lastName }`
+   - Response: `{ success: boolean, message: string }`
+   - Purpose: Registers a new user and sends a 4-digit OTP to the user's email
+
+2. **Login with OTP**
+
+   - Endpoint: `POST /api/auth/login`
+   - Payload: `{ email }`
+   - Response: `{ success: boolean, message: string }`
+   - Purpose: Initiates login for an existing user by sending a 4-digit OTP to their email
+
+3. **Request OTP**
 
    - Endpoint: `POST /api/auth/otp/request`
    - Payload: `{ email, firstName?, lastName? }`
    - Response: `{ success: boolean, message: string, otpId: string }`
    - Purpose: Generates and sends a 4-digit OTP to the user's email
 
-2. **Verify OTP**
+4. **Verify OTP**
 
    - Endpoint: `POST /api/auth/otp/verify`
    - Payload: `{ otpId: string, otp: string }`
    - Response: `{ success: boolean, token: string, user: User }`
    - Purpose: Verifies the OTP entered by user and returns authentication token
 
-3. **Resend OTP**
+5. **Resend OTP**
 
    - Endpoint: `POST /api/auth/otp/resend`
    - Payload: `{ otpId: string }`
    - Response: `{ success: boolean, message: string, otpId: string }`
    - Purpose: Regenerates and resends OTP to user's email when requested
 
-4. **Google Authentication**
+6. **Google Authentication**
    - Endpoint: `POST /api/auth/google`
    - Payload: `{ token: string }` (ID token from Google)
    - Response: `{ success: boolean, token: string, user: User }`
@@ -1172,9 +1251,12 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   user: User | null;
-  initiateAuth: (email: string, firstName?: string, lastName?: string) => Promise<{
+  signup: (email: string, firstName: string, lastName: string) => Promise<{
     success: boolean;
-    isNewUser: boolean;
+    message: string;
+  }>;
+  login: (email: string) => Promise<{
+    success: boolean;
     message: string;
   }>;
   verifyOtp: (email: string, otp: string) => Promise<{
@@ -1268,8 +1350,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
   }, [router]);
 
-  const initiateAuth = async (email: string, firstName?: string, lastName?: string) => {
-    return await authRepository.initiateAuth(email, firstName, lastName);
+  const signup = async (email: string, firstName: string, lastName: string) => {
+    return await authRepository.signup(email, firstName, lastName);
+  };
+
+  const login = async (email: string) => {
+    return await authRepository.login(email);
   };
 
   const verifyOtp = async (email: string, otp: string) => {
@@ -1317,7 +1403,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
         isAuthenticated,
         isLoading,
         user,
-        initiateAuth,
+        signup,
+        login,
         verifyOtp,
         resendOtp,
         authenticateWithGoogle,

@@ -26,9 +26,9 @@ src/
 └── shared/
     └── components/
         └── atoms/
-            └── button/  # Folder for button component
+            └── Button/  # Folder for Button component
                 ├── index.tsx      # Main component wrapper 
-                └── button.test.tsx  # Tests for the component
+                └── Button.test.tsx  # Tests for the component
 ```
 
 ## Wrapper Component Pattern
@@ -36,7 +36,7 @@ src/
 Each shadcn/ui component should have its own folder with an index.tsx wrapper in the shared components layer that follows this pattern:
 
 ```typescript
-// src/shared/components/atoms/button/index.tsx
+// src/shared/components/atoms/Button/index.tsx
 import { forwardRef } from 'react';
 import { Button as ShadcnButton } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -57,7 +57,7 @@ When integrating with existing components, always import from the wrapper compon
 
 ```typescript
 // DO THIS
-import { Button } from '@/shared/components/atoms/button';
+import { Button } from '@/shared/components/atoms/Button';
 // or
 import { Button } from '@/shared/components/atoms';
 
@@ -69,8 +69,8 @@ Be sure to re-export the component in the atoms/index.ts file:
 
 ```typescript
 // src/shared/components/atoms/index.ts
-export * from './button';
-export * from './checkbox';
+export * from './Button';
+export * from './Checkbox';
 // etc.
 ```
 
@@ -79,7 +79,7 @@ export * from './checkbox';
 Any customization should be done in the wrapper component, not by modifying the shadcn/ui components directly:
 
 ```typescript
-// src/shared/components/atoms/button/index.tsx
+// src/shared/components/atoms/Button/index.tsx
 import { forwardRef } from 'react';
 import { Button as ShadcnButton } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -122,7 +122,7 @@ Button.displayName = 'Button';
 All wrapper components in the atoms, molecules, and organisms layers **MUST** have corresponding tests implemented and run. This is a mandatory requirement:
 
 1. Create a test file with the same name as the component file:
-   - For `src/shared/components/atoms/button/index.tsx`, create `src/shared/components/atoms/button/button.test.tsx`
+   - For `src/shared/components/atoms/Button/index.tsx`, create `src/shared/components/atoms/Button/Button.test.tsx`
 
 2. Test file must be created and tests run immediately after creating the wrapper component.
 
@@ -136,7 +136,7 @@ All wrapper components in the atoms, molecules, and organisms layers **MUST** ha
 
 ```bash
 # Run tests for the specific component
-npm test -- --testPathPattern=src/shared/components/atoms/button
+npm test -- --testPathPattern=src/shared/components/atoms/Button
 
 # Ensure the test is passing before committing
 ```
@@ -146,7 +146,7 @@ npm test -- --testPathPattern=src/shared/components/atoms/button
 Here's a complete example of a required test file:
 
 ```typescript
-// src/shared/components/atoms/button/button.test.tsx
+// src/shared/components/atoms/Button/Button.test.tsx
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -210,7 +210,7 @@ describe('Button Component', () => {
 You should test your wrapper components to ensure they pass through props correctly and apply any custom behavior:
 
 ```typescript
-// src/shared/components/atoms/button/button.test.tsx
+// src/shared/components/atoms/Button/Button.test.tsx
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { Button } from './index';
@@ -255,7 +255,7 @@ Import the component from the shared components instead of directly from shadcn/
 
 ```tsx
 // Correct usage
-import { Button } from '@/shared/components/atoms/button';
+import { Button } from '@/shared/components/atoms/Button';
 
 // Or through the atoms index
 import { Button } from '@/shared/components/atoms';
