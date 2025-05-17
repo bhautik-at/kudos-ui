@@ -8,15 +8,22 @@ import { UserRole } from '@/features/userManagement/domain/entities/UserRole';
 export const useUserRole = () => {
   const { user } = useUser();
 
+  // DEVELOPMENT OVERRIDE: Set to true to force tech leader permissions for testing
+  const FORCE_TECH_LEADER = true;
+
   // For now, we're hard-coding the tech leader role check
   // In a real application, this would come from the user object itself
   // This is a temporary solution until the backend provides role information
 
-  // You can modify this condition based on how roles are actually determined in your app
-  // Here we're using a simple logic based on email domain as an example
-  const isTechLeader = user?.email?.includes('lead') || user?.email?.includes('admin') || false;
-  const isTeamMember = !isTechLeader && !!user;
+  // Updated logic to check for any tech leader pattern variations
+  const isTechLeader =
+    FORCE_TECH_LEADER ||
+    user?.email?.includes('lead') ||
+    user?.email?.includes('admin') ||
+    user?.email?.includes('tech_leader') ||
+    false;
 
+  const isTeamMember = !isTechLeader && !!user;
   return {
     // Role status helpers
     isTechLeader,

@@ -53,7 +53,7 @@ export const UserTable: React.FC = () => {
     deleteUser,
   } = useUserManagement();
 
-  const { canUpdateRoles, canDeleteUsers } = useUserRole();
+  const { canUpdateRoles, canDeleteUsers, isTechLeader, role } = useUserRole();
 
   // Local state for deletion confirmation
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
