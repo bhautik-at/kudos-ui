@@ -1,7 +1,8 @@
 import { useAuth } from '@/features/auth/presentation/contexts/AuthContext';
+import { useUser } from '@/features/users/presentation/contexts/UserContext';
 
 export const DashboardTemplate = () => {
-  const { user } = useAuth();
+  const { user } = useUser();
 
   return (
     <div className="min-h-screen bg-background p-8">

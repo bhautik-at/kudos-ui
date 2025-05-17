@@ -29,7 +29,7 @@ type OtpFormValues = z.infer<typeof otpFormSchema>;
 
 export const OtpVerificationForm = () => {
   const router = useRouter();
-  const { verifyOtp, resendOtp, isLoading, clearError, currentEmail, isSignup } = useAuth();
+  const { verifyOtp, resendOtp, isAuthLoading, clearError, currentEmail, isSignup } = useAuth();
   const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(false);
 
@@ -155,7 +155,7 @@ export const OtpVerificationForm = () => {
                     placeholder="Enter 4-digit code"
                     maxLength={4}
                     error={!!form.formState.errors.otp}
-                    disabled={isLoading}
+                    disabled={isAuthLoading}
                     {...field}
                     onChange={e => {
                       // Allow only digits
@@ -169,8 +169,8 @@ export const OtpVerificationForm = () => {
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Verifying...' : 'Verify OTP'}
+          <Button type="submit" className="w-full" disabled={isAuthLoading}>
+            {isAuthLoading ? 'Verifying...' : 'Verify OTP'}
           </Button>
 
           <div className="text-center mt-4">

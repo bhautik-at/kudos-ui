@@ -24,7 +24,7 @@ const loginFormSchema = z.object({
 type LoginFormValues = z.infer<typeof loginFormSchema>;
 
 export const LoginForm = () => {
-  const { login, isLoading, clearError } = useAuth();
+  const { login, isAuthLoading, clearError } = useAuth();
   const { navigateToSignup } = useAuthNavigation();
 
   const form = useForm<LoginFormValues>({
@@ -75,7 +75,7 @@ export const LoginForm = () => {
                     type="email"
                     placeholder="Enter your email"
                     error={!!form.formState.errors.email}
-                    disabled={isLoading}
+                    disabled={isAuthLoading}
                     {...field}
                   />
                 </FormControl>
@@ -84,8 +84,8 @@ export const LoginForm = () => {
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Logging in...' : 'Log In'}
+          <Button type="submit" className="w-full" disabled={isAuthLoading}>
+            {isAuthLoading ? 'Logging in...' : 'Log In'}
           </Button>
 
           <div className="text-center text-sm mt-4">
