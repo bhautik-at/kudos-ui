@@ -141,7 +141,7 @@ export const OtpVerificationForm = () => {
   };
 
   // If verification is complete and we have a valid invitation, show the invitation form
-  if (hasInvite && hasOrgId && orgId) {
+  if (verificationComplete && hasInvite && hasOrgId && orgId) {
     return (
       <div className="w-full max-w-md mx-auto">
         <AcceptInvitation
