@@ -1,9 +1,3 @@
-import axios, {
-  AxiosInstance,
-  AxiosRequestConfig,
-  AxiosResponse,
-  InternalAxiosRequestConfig,
-} from 'axios';
 import { IHttpService, IHttpOptions } from './interfaces/IHttpService';
 import { IHttpResponse } from './interfaces/IHttpResponse';
 import { HttpError } from './HttpError';

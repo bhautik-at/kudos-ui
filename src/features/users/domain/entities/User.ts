@@ -1,5 +1,5 @@
 export interface UserProps {
-  id?: string;
+  id: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -10,7 +10,7 @@ export interface UserProps {
 }
 
 export class User {
-  readonly id?: string;
+  readonly id: string;
   readonly email: string;
   readonly firstName: string;
   readonly lastName: string;
