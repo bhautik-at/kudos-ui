@@ -13,9 +13,11 @@ export class HttpService implements IHttpService {
   };
   private interceptors: Map<number, InterceptorFunction> = new Map();
   private interceptorId: number = 0;
+  private isServer: boolean = false;
 
   constructor(baseUrl: string = '') {
     this.baseUrl = baseUrl || config.api.baseUrl;
+    this.isServer = typeof window === 'undefined';
   }
 
   /**
@@ -36,6 +38,14 @@ export class HttpService implements IHttpService {
    * Add auth header for authenticated requests
    */
   setAuthToken(token: string): void {
+    if (this.isServer) {
+      // Don't store tokens in server memory to avoid leaking across requests
+      // Just for this request it's added to headers
+      this.defaultHeaders['Authorization'] = `Bearer ${token}`;
+      return;
+    }
+
+    // In browser, store in default headers
     this.defaultHeaders['Authorization'] = `Bearer ${token}`;
   }
 

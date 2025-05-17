@@ -1,7 +1,7 @@
 'use client';
 
 import { useToast as useShadcnToast, toast as shadcnToast } from '@/components/hooks/use-toast';
-import type { ToastActionElement } from '@/components/ui/toast';
+import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
 import { ToastVariant } from '@/shared/components/atoms/toast';
 import {
   IToastService,
@@ -16,18 +16,9 @@ import {
 export function useToast(): IToastService {
   const { toasts, dismiss } = useShadcnToast();
 
-  const mapVariantToShadcn = (variant: ToastVariant = 'default') => {
-    switch (variant) {
-      case 'success':
-      case 'info':
-      case 'warning':
-        return 'default';
-      case 'destructive':
-      case 'error':
-        return 'destructive';
-      default:
-        return 'default';
-    }
+  const mapVariantToType = (variant: ToastVariant = 'default'): 'default' | 'destructive' => {
+    // Always map to shadcn's supported variants
+    return variant === 'destructive' || variant === 'error' ? 'destructive' : 'default';
   };
 
   const toast = ({
@@ -43,48 +34,62 @@ export function useToast(): IToastService {
     action?: ToastActionElement;
     options?: ToastOptions;
   }) => {
-    return shadcnToast({
-      variant: mapVariantToShadcn(type as ToastVariant),
-      title,
-      description,
-      action,
-      duration: options?.duration,
-      className: type !== 'default' && type !== 'destructive' ? `toast-${type}` : '',
+    // If description is empty and title exists, swap them for better UX
+    if (!description && title) {
+      description = title;
+      title = undefined;
+    }
+
+    // We'll pass the original type as a className and extend options
+    // but we'll map it to a shadcn-supported variant for the underlying component
+    const toastOptions = {
       ...options,
+      variant: mapVariantToType(type as ToastVariant),
+      className: type ? `toast-${type}` : '',
+      // Add our custom type/variant for our Toast component to use
+      customVariant: type,
+    };
+
+    return shadcnToast({
+      title,
+      description: description || 'Something happened',
+      action,
+      duration: options?.duration || 5000,
+      ...toastOptions,
     });
   };
 
-  const success = (title: string, description?: string, options?: ToastOptions) => {
+  const success = (message: string, description?: string, options?: ToastOptions) => {
     return toast({
       type: 'success',
-      title,
+      title: message,
       description: description || '',
       options,
     });
   };
 
-  const error = (title: string, description?: string, options?: ToastOptions) => {
+  const error = (message: string, description?: string, options?: ToastOptions) => {
     return toast({
-      type: 'destructive',
-      title,
-      description: description || '',
-      options,
+      type: 'error', // Use 'error' for our component
+      title: description ? message : undefined,
+      description: description || message,
+      options: { ...options, duration: options?.duration || 7000 }, // Error messages stay longer
     });
   };
 
-  const info = (title: string, description?: string, options?: ToastOptions) => {
+  const info = (message: string, description?: string, options?: ToastOptions) => {
     return toast({
       type: 'info',
-      title,
+      title: message,
       description: description || '',
       options,
     });
   };
 
-  const warning = (title: string, description?: string, options?: ToastOptions) => {
+  const warning = (message: string, description?: string, options?: ToastOptions) => {
     return toast({
       type: 'warning',
-      title,
+      title: message,
       description: description || '',
       options,
     });

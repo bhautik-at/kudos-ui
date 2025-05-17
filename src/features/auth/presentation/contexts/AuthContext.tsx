@@ -8,7 +8,8 @@ import { ResendOtpUseCase } from '../../application/useCases/ResendOtpUseCase';
 import { RefreshTokenUseCase } from '../../application/useCases/RefreshTokenUseCase';
 import { httpService } from '@/shared/services/http/HttpService';
 
-interface User {
+// Define basic auth-related interfaces
+interface AuthUser {
   id: string;
   email: string;
   firstName: string;
@@ -16,9 +17,7 @@ interface User {
 }
 
 interface AuthContextProps {
-  user: User | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+  isAuthLoading: boolean;
   error: string | null;
   awaitingOtpVerification: boolean;
   currentEmail: string;
@@ -36,7 +35,7 @@ interface AuthContextProps {
     success: boolean;
     message: string;
     token?: string;
-    user?: User;
+    user?: AuthUser;
   }>;
   resendOtp: (email: string) => Promise<{
     success: boolean;
@@ -48,7 +47,6 @@ interface AuthContextProps {
     success: boolean;
     message: string;
     token?: string;
-    user?: User;
   }>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -60,9 +58,7 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAuthLoading, setIsAuthLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [awaitingOtpVerification, setAwaitingOtpVerification] = useState<boolean>(false);
   const [currentEmail, setCurrentEmail] = useState<string>('');
@@ -75,34 +71,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const resendOtpUseCase = new ResendOtpUseCase(authRepository);
   const refreshTokenUseCase = new RefreshTokenUseCase(authRepository);
 
-  // Check if user is already authenticated on initial load
+  // Check authentication status on initial load
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkAuthStatus = async () => {
       try {
-        // Try to refresh token to check if user is authenticated
-        const result = await refreshToken();
-        if (result.success && 'token' in result && result.token) {
-          setIsAuthenticated(true);
-          if ('user' in result && result.user) {
-            setUser(result.user);
-          }
-        }
-        setIsLoading(false);
+        // Just set loading to false - we'll let UserContext determine auth status
+        // by fetching the user profile
+        setIsAuthLoading(false);
       } catch (error) {
         setError('Failed to check authentication status');
-        setIsLoading(false);
+        setIsAuthLoading(false);
       }
     };
 
-    checkAuth();
+    checkAuthStatus();
   }, []);
-
-  // Removed automatic redirect to dashboard
-  // The OtpVerificationForm component will handle navigation directly
 
   const signup = async (email: string, firstName: string, lastName: string) => {
     setError(null);
-    setIsLoading(true);
+    setIsAuthLoading(true);
     try {
       const result = await signupUseCase.execute({ email, firstName, lastName });
 
@@ -114,18 +101,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setError(result.message);
       }
 
-      setIsLoading(false);
+      setIsAuthLoading(false);
       return result;
     } catch (error: any) {
       setError(error.message || 'Failed to sign up');
-      setIsLoading(false);
+      setIsAuthLoading(false);
       return { success: false, message: error.message || 'Failed to sign up' };
     }
   };
 
   const login = async (email: string) => {
     setError(null);
-    setIsLoading(true);
+    setIsAuthLoading(true);
     try {
       const result = await loginUseCase.execute({ email });
 
@@ -137,47 +124,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setError(result.message);
       }
 
-      setIsLoading(false);
+      setIsAuthLoading(false);
       return result;
     } catch (error: any) {
       setError(error.message || 'Failed to log in');
-      setIsLoading(false);
+      setIsAuthLoading(false);
       return { success: false, message: error.message || 'Failed to log in' };
     }
   };
 
   const verifyOtp = async (email: string, otp: string) => {
     setError(null);
-    setIsLoading(true);
+    setIsAuthLoading(true);
     try {
-      console.log('AuthContext: Verifying OTP...');
       const result = await verifyOtpUseCase.execute({ email, otp });
-      console.log('AuthContext: OTP verification result:', result);
 
       if (result.success && result.token) {
-        console.log('AuthContext: Setting authenticated state to true');
-        setIsAuthenticated(true);
         setAwaitingOtpVerification(false);
-
-        // Set token in HTTP service for future authenticated requests
-        httpService.setAuthToken(result.token);
-
-        // Set user data if available
-        if (result.user) {
-          console.log('AuthContext: Setting user data:', result.user);
-          setUser(result.user);
-        }
       } else {
-        console.log('AuthContext: OTP verification failed');
         setError(result.message);
       }
 
-      setIsLoading(false);
+      setIsAuthLoading(false);
       return result;
     } catch (error: any) {
-      console.error('AuthContext: Error verifying OTP:', error);
       setError(error.message || 'Failed to verify OTP');
-      setIsLoading(false);
+      setIsAuthLoading(false);
       return { success: false, message: error.message || 'Failed to verify OTP' };
     }
   };
@@ -201,22 +173,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // This function should only be called when we need to refresh an expired token
   const refreshToken = async () => {
     setError(null);
     try {
       const result = await refreshTokenUseCase.execute({});
-
-      if (result.success && result.token) {
-        // Set token in HTTP service for future authenticated requests
-        httpService.setAuthToken(result.token);
-
-        // Set user data if available
-        if (result.user) {
-          setUser(result.user);
-          setIsAuthenticated(true);
-        }
-      }
-
       return result;
     } catch (error: any) {
       setError(error.message || 'Failed to refresh token');
@@ -228,25 +189,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = async () => {
-    setIsLoading(true);
+    setIsAuthLoading(true);
 
     try {
       await authRepository.logout();
 
       // Clear auth state
-      setUser(null);
-      setIsAuthenticated(false);
       setAwaitingOtpVerification(false);
-
-      // Clear auth token
-      httpService.clearAuthToken();
 
       // Redirect to login page
       router.push('/');
     } catch (error: any) {
       setError(error.message || 'Failed to log out');
     } finally {
-      setIsLoading(false);
+      setIsAuthLoading(false);
     }
   };
 
@@ -255,9 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const value = {
-    user,
-    isAuthenticated,
-    isLoading,
+    isAuthLoading,
     error,
     awaitingOtpVerification,
     currentEmail,
