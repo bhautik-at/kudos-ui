@@ -96,14 +96,24 @@ export class AuthApiClient {
 
   async refreshToken(): Promise<VerifyOtpResponse> {
     try {
+      console.log('AuthApiClient: Refreshing token');
       const response = await httpService.post<VerifyOtpResponse>(
         `${this.baseUrl}/refresh-token`,
         {},
-        { withCredentials: true }
+        { 
+          withCredentials: true,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        }
       );
 
+      console.log('AuthApiClient: Token refresh response:', response.data);
       return response.data;
     } catch (error) {
+      console.error('AuthApiClient: Error refreshing token:', error);
       if (error instanceof HttpError) {
         throw new Error(error.data?.message || 'Failed to refresh token');
       }

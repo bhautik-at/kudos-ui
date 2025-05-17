@@ -183,6 +183,7 @@ export class HttpService implements IHttpService {
       method,
       headers: { ...this.defaultHeaders, ...headers },
       credentials: withCredentials ? 'include' : 'same-origin',
+      mode: 'cors',
     };
 
     // Add body for non-GET requests
