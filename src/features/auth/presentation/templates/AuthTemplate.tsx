@@ -25,3 +25,4 @@ export const AuthTemplate = ({ children }: AuthTemplateProps) => {
     </div>
   );
 };
+ 

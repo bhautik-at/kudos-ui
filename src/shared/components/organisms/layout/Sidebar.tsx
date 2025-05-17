@@ -31,6 +31,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
   const [collapsed, setCollapsed] = useState(true);
   const router = useRouter();
 
+  // Extract query parameters to preserve them across routes
+  const { query } = router;
+  const queryParams = { ...query };
+  // Remove pathname-specific parameters if needed
+  delete queryParams.slug;
+
   const toggleSidebar = () => {
     if (isMobile && onClose) {
       // Call the onClose prop when in mobile mode
@@ -52,6 +58,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
 
   // On mobile, we don't collapse - we just show the full sidebar
   const effectiveCollapsed = isMobile ? false : collapsed;
+
+  // Helper function to build href with query parameters
+  const buildHref = (baseHref: string) => {
+    // If there are no query parameters, return the base URL
+    if (Object.keys(queryParams).length === 0) {
+      return baseHref;
+    }
+
+    // Build the query string
+    const queryString = new URLSearchParams();
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach(val => queryString.append(key, val));
+      } else if (value !== undefined) {
+        queryString.append(key, value as string);
+      }
+    });
+
+    return `${baseHref}?${queryString.toString()}`;
+  };
 
   return (
     <aside
@@ -113,6 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
       <ScrollArea className="flex-1">
         <nav className="py-4 px-2 space-y-1">
           {sidebarItems.map(item => {
+            const hrefWithQuery = buildHref(item.href);
             const isActive =
               router.pathname === item.href || router.pathname.startsWith(`${item.href}/`);
 
@@ -121,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
-                      href={item.href}
+                      href={hrefWithQuery}
                       className={cn(
                         'flex items-center rounded-md transition-colors my-1',
                         effectiveCollapsed ? 'justify-center h-10 w-10 mx-auto' : 'py-2 px-3',
