@@ -5,6 +5,7 @@ export interface IHttpOptions {
   params?: Record<string, string | number | boolean>;
   timeout?: number;
   withCredentials?: boolean;
+  credentials?: 'include' | 'same-origin';
 }
 
 export interface IHttpService {

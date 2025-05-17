@@ -69,6 +69,7 @@ export class HttpService implements IHttpService {
   private getDefaultOptions(): IHttpOptions {
     return {
       withCredentials: true,
+      credentials: 'include',
       headers: {
         'Content-Type': 'application/json',
       },
