@@ -21,7 +21,7 @@ export function Toaster() {
               {description && <ToastDescription>{description}</ToastDescription>}
             </div>
             {action}
-            <ToastClose />
+            <ToastClose className="absolute right-2 top-2 h-5 w-5 cursor-pointer rounded-full bg-background/50 text-foreground hover:bg-background/80" />
           </Toast>
         );
       })}

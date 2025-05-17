@@ -177,9 +177,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refreshToken = async () => {
     setError(null);
     try {
+      console.log('AuthContext: Starting token refresh');
       const result = await refreshTokenUseCase.execute({});
+      console.log('AuthContext: Token refresh result:', result);
+
+      if (result.success && result.token) {
+        console.log('AuthContext: Setting new auth token');
+        // Set token in HTTP service for future authenticated requests
+        httpService.setAuthToken(result.token);
+
+        // Set user data if available
+        if (result.user) {
+          console.log('AuthContext: Updating user data after refresh token');
+          // Note: In this version of the context, we don't manage user state here
+        }
+      } else {
+        console.log('AuthContext: Token refresh did not return a new token');
+      }
+
       return result;
     } catch (error: any) {
+      console.error('AuthContext: Error refreshing token:', error);
       setError(error.message || 'Failed to refresh token');
       return {
         success: false,
@@ -192,13 +210,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsAuthLoading(true);
 
     try {
+      // Clear token first to prevent any additional API calls
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('kudos_user_id');
+        // Clear auth token in HttpService
+        httpService.clearAuthToken();
+      }
+
+      // Call the logout API endpoint
       await authRepository.logout();
 
       // Clear auth state
       setAwaitingOtpVerification(false);
 
-      // Redirect to login page
-      router.push('/');
+      // Redirect to login page - but don't use router.push as that can trigger additional API calls
+      // Allow the component calling logout to handle the redirect
     } catch (error: any) {
       setError(error.message || 'Failed to log out');
     } finally {

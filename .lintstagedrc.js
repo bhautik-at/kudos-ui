@@ -1,4 +1,4 @@
-module.exports = {
+export default {
   // Skip type checking during commit
   '**/*.ts?(x)': () => 'echo "Skipping type check for faster commits"',
 
