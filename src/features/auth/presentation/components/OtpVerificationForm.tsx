@@ -37,6 +37,7 @@ export const OtpVerificationForm = () => {
   const [canResend, setCanResend] = useState<boolean>(false);
   const [showAcceptInvitation, setShowAcceptInvitation] = useState(false);
   const [verifiedOrgId, setVerifiedOrgId] = useState<string | null>(null);
+  const [attemptCount, setAttemptCount] = useState<number>(0);
 
   // Get orgId and invite from URL
   const orgId = router.query.orgId as string | undefined;
@@ -73,6 +74,19 @@ export const OtpVerificationForm = () => {
 
     return () => clearTimeout(timer);
   }, [cooldownTime]);
+
+  useEffect(() => {
+    if (attemptCount >= 3) {
+      toastService.error('Too many failed attempts. Redirecting to home page.');
+
+      // Redirect to root route after a short delay
+      const timer = setTimeout(() => {
+        window.location.href = '/';
+      }, 1500);
+
+      return () => clearTimeout(timer);
+    }
+  }, [attemptCount]);
 
   const onSubmit = async (values: OtpFormValues) => {
     clearError();
@@ -132,6 +146,8 @@ export const OtpVerificationForm = () => {
           // Default cooldown if not specified by server
           setCooldownTime(60);
         }
+        // Reset attempt counter when new OTP is sent
+        setAttemptCount(0);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred';

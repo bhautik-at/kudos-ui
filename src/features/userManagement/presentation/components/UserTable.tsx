@@ -14,7 +14,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/atoms/Select';
-import { ArrowUpDown, Trash2, Lock, Users } from 'lucide-react';
+import {
+  ArrowUpDown,
+  Trash2,
+  Lock,
+  Users,
+  ChevronDown,
+  CheckCircle,
+  Shield,
+  UserCircle,
+} from 'lucide-react';
 import { Button } from '@/shared/components/atoms/Button';
 import {
   Pagination,
@@ -40,6 +49,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/shared/components/atoms/Tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 export const UserTable: React.FC = () => {
   const {
@@ -127,6 +142,27 @@ export const UserTable: React.FC = () => {
     setUserToDelete(null);
   };
 
+  // Render role badge
+  const renderRoleBadge = (userRole: UserRole) => (
+    <div
+      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+        userRole === UserRole.TechLeader
+          ? 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10'
+          : 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-700/10'
+      }`}
+    >
+      {userRole === UserRole.TechLeader ? (
+        <>
+          <Shield className="h-3 w-3 mr-1" /> Tech Leader
+        </>
+      ) : (
+        <>
+          <UserCircle className="h-3 w-3 mr-1" /> Member
+        </>
+      )}
+    </div>
+  );
+
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-gray-850 overflow-hidden rounded-xl border shadow-sm">
@@ -207,33 +243,57 @@ export const UserTable: React.FC = () => {
                     </TableCell>
                     <TableCell>
                       {role === UserRole.TechLeader ? (
-                        <Select
-                          value={user.role}
-                          onValueChange={value => handleRoleChange(user.id, value as UserRole)}
-                          disabled={isLoading}
-                        >
-                          <SelectTrigger className="w-[140px] md:w-[180px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                            <SelectValue placeholder="Select a role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={UserRole.Member}>Member</SelectItem>
-                            <SelectItem value={UserRole.TechLeader}>Tech Leader</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className="w-[160px] justify-between items-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                            >
+                              <span className="flex items-center">
+                                {user.role === UserRole.TechLeader ? (
+                                  <>
+                                    <Shield className="h-4 w-4 mr-2 text-purple-600" />
+                                    <span>Tech Leader</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <UserCircle className="h-4 w-4 mr-2 text-green-600" />
+                                    <span>Member</span>
+                                  </>
+                                )}
+                              </span>
+                              <ChevronDown className="h-4 w-4 opacity-50" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start" className="w-[160px]">
+                            <DropdownMenuItem
+                              onClick={() => handleRoleChange(user.id, UserRole.TechLeader)}
+                              className="flex items-center"
+                            >
+                              <Shield className="h-4 w-4 mr-2 text-purple-600" />
+                              <span>Tech Leader</span>
+                              {user.role === UserRole.TechLeader && (
+                                <CheckCircle className="h-4 w-4 ml-auto text-green-500" />
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleRoleChange(user.id, UserRole.Member)}
+                              className="flex items-center"
+                            >
+                              <UserCircle className="h-4 w-4 mr-2 text-green-600" />
+                              <span>Member</span>
+                              {user.role === UserRole.Member && (
+                                <CheckCircle className="h-4 w-4 ml-auto text-green-500" />
+                              )}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       ) : (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <div className="flex items-center">
-                                <span
-                                  className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
-                                    user.role === UserRole.TechLeader
-                                      ? 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10'
-                                      : 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-700/10'
-                                  }`}
-                                >
-                                  {user.role === UserRole.Member ? 'Member' : 'Tech Leader'}
-                                </span>
+                                {renderRoleBadge(user.role)}
                                 <Lock className="h-3.5 w-3.5 ml-2 text-muted-foreground" />
                               </div>
                             </TooltipTrigger>
@@ -245,7 +305,7 @@ export const UserTable: React.FC = () => {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      {role === UserRole.TechLeader && (
+                      {role === UserRole.TechLeader ? (
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -263,6 +323,8 @@ export const UserTable: React.FC = () => {
                             </TooltipContent>
                           </Tooltip>
                         </TooltipProvider>
+                      ) : (
+                        <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                       )}
                     </TableCell>
                   </TableRow>
