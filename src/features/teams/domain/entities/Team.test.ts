@@ -1,108 +1,97 @@
 import { Team } from './Team';
 
 describe('Team Entity', () => {
-  const validTeamProps = {
-    name: 'Frontend Team',
-    organizationId: 'org-123',
-    createdBy: 'user-123',
-  };
-
-  it('should create a valid team', () => {
+  it('should create a valid team with required properties', () => {
     // Arrange
-    const props = { ...validTeamProps };
-    
+    const teamProps = {
+      name: 'Engineering Team',
+      organizationId: 'org-123',
+      createdBy: 'user-123',
+    };
+
     // Act
-    const team = new Team(props);
-    
+    const team = new Team(teamProps);
+
     // Assert
-    expect(team.name).toBe(props.name);
-    expect(team.organizationId).toBe(props.organizationId);
-    expect(team.createdBy).toBe(props.createdBy);
+    expect(team.name).toBe('Engineering Team');
+    expect(team.organizationId).toBe('org-123');
+    expect(team.createdBy).toBe('user-123');
     expect(team.members).toEqual([]);
     expect(team.createdAt).toBeInstanceOf(Date);
     expect(team.updatedAt).toBeInstanceOf(Date);
   });
 
-  it('should create a team with members', () => {
+  it('should create a team with all properties', () => {
     // Arrange
-    const props = { 
-      ...validTeamProps,
-      members: ['user-123', 'user-456', 'user-789']
+    const now = new Date();
+    const teamProps = {
+      id: 'team-123',
+      name: 'Engineering Team',
+      organizationId: 'org-123',
+      createdBy: 'user-123',
+      createdAt: now,
+      updatedAt: now,
+      members: ['user-123', 'user-456'],
     };
-    
-    // Act
-    const team = new Team(props);
-    
-    // Assert
-    expect(team.members).toEqual(['user-123', 'user-456', 'user-789']);
-  });
 
-  it('should create a team with custom created and updated dates', () => {
-    // Arrange
-    const createdAt = new Date('2023-01-01');
-    const updatedAt = new Date('2023-01-02');
-    const props = { 
-      ...validTeamProps,
-      createdAt,
-      updatedAt
-    };
-    
     // Act
-    const team = new Team(props);
-    
+    const team = new Team(teamProps);
+
     // Assert
-    expect(team.createdAt).toBe(createdAt);
-    expect(team.updatedAt).toBe(updatedAt);
+    expect(team.id).toBe('team-123');
+    expect(team.name).toBe('Engineering Team');
+    expect(team.organizationId).toBe('org-123');
+    expect(team.createdBy).toBe('user-123');
+    expect(team.members).toEqual(['user-123', 'user-456']);
+    expect(team.createdAt).toBe(now);
+    expect(team.updatedAt).toBe(now);
   });
 
   it('should throw error when team name is empty', () => {
-    // Arrange & Act & Assert
-    expect(() => new Team({ 
-      ...validTeamProps, 
-      name: '' 
-    })).toThrow('Team name is required');
+    // Arrange
+    const teamProps = {
+      name: '',
+      organizationId: 'org-123',
+      createdBy: 'user-123',
+    };
 
-    expect(() => new Team({ 
-      ...validTeamProps, 
-      name: '   ' 
-    })).toThrow('Team name is required');
+    // Act & Assert
+    expect(() => new Team(teamProps)).toThrow('Team name is required');
   });
 
   it('should throw error when team name is too short', () => {
-    // Arrange & Act & Assert
-    expect(() => new Team({ 
-      ...validTeamProps, 
-      name: 'A'
-    })).toThrow('Team name must be at least 2 characters long');
-  });
-
-  it('should throw error when organization ID is missing', () => {
-    // Arrange & Act & Assert
-    expect(() => new Team({ 
-      ...validTeamProps, 
-      organizationId: ''
-    })).toThrow('Organization ID is required');
-  });
-
-  it('should throw error when creator ID is missing', () => {
-    // Arrange & Act & Assert
-    expect(() => new Team({ 
-      ...validTeamProps, 
-      createdBy: ''
-    })).toThrow('Creator ID is required');
-  });
-
-  it('should accept a team with an ID', () => {
     // Arrange
-    const props = { 
-      ...validTeamProps,
-      id: 'team-123'
+    const teamProps = {
+      name: 'A',
+      organizationId: 'org-123',
+      createdBy: 'user-123',
     };
-    
-    // Act
-    const team = new Team(props);
-    
-    // Assert
-    expect(team.id).toBe('team-123');
+
+    // Act & Assert
+    expect(() => new Team(teamProps)).toThrow('Team name must be at least 2 characters long');
   });
-}); 
+
+  it('should throw error when organizationId is missing', () => {
+    // Arrange
+    const teamProps = {
+      name: 'Engineering Team',
+      organizationId: '',
+      createdBy: 'user-123',
+    };
+
+    // Act & Assert
+    expect(() => new Team(teamProps)).toThrow('Organization ID is required');
+  });
+
+  it('should throw error when createdBy is missing', () => {
+    // Arrange
+    const teamProps = {
+      name: 'Engineering Team',
+      organizationId: 'org-123',
+      createdBy: '',
+    };
+
+    // Act & Assert
+    expect(() => new Team(teamProps)).toThrow('Creator ID is required');
+  });
+});

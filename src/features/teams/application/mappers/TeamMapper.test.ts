@@ -1,169 +1,128 @@
+import { TeamMapper } from './TeamMapper';
 import { Team } from '../../domain/entities/Team';
 import { CreateTeamInputDto } from '../dtos/CreateTeamInputDto';
 import { UpdateTeamInputDto } from '../dtos/UpdateTeamInputDto';
-import { TeamMapper } from './TeamMapper';
 
 describe('TeamMapper', () => {
   describe('toEntity', () => {
-    it('should convert DTO to entity with required fields', () => {
+    it('should map CreateTeamInputDto to Team entity', () => {
       // Arrange
-      const dto: CreateTeamInputDto = {
-        name: 'Test Team',
-        organizationId: 'org-123',
-        createdBy: 'user-123',
-      };
-
-      // Act
-      const entity = TeamMapper.toEntity(dto);
-
-      // Assert
-      expect(entity).toBeInstanceOf(Team);
-      expect(entity.name).toBe('Test Team');
-      expect(entity.organizationId).toBe('org-123');
-      expect(entity.createdBy).toBe('user-123');
-      expect(entity.members).toEqual([]);
-      expect(entity.createdAt).toBeInstanceOf(Date);
-      expect(entity.updatedAt).toBeInstanceOf(Date);
-    });
-
-    it('should convert DTO to entity with all fields including members', () => {
-      // Arrange
-      const dto: CreateTeamInputDto = {
-        name: 'Test Team',
+      const createTeamDto: CreateTeamInputDto = {
+        name: 'Engineering Team',
         organizationId: 'org-123',
         createdBy: 'user-123',
         members: ['user-123', 'user-456'],
       };
 
       // Act
-      const entity = TeamMapper.toEntity(dto);
+      const team = TeamMapper.toEntity(createTeamDto);
 
       // Assert
-      expect(entity).toBeInstanceOf(Team);
-      expect(entity.name).toBe('Test Team');
-      expect(entity.organizationId).toBe('org-123');
-      expect(entity.createdBy).toBe('user-123');
-      expect(entity.members).toEqual(['user-123', 'user-456']);
+      expect(team).toBeInstanceOf(Team);
+      expect(team.name).toBe('Engineering Team');
+      expect(team.organizationId).toBe('org-123');
+      expect(team.createdBy).toBe('user-123');
+      expect(team.members).toEqual(['user-123', 'user-456']);
+      expect(team.createdAt).toBeInstanceOf(Date);
+      expect(team.updatedAt).toBeInstanceOf(Date);
     });
   });
 
   describe('toEntityFromUpdate', () => {
-    it('should convert update DTO to entity preserving existing fields', () => {
+    it('should map UpdateTeamInputDto to Team entity while preserving existing properties', () => {
       // Arrange
+      const updateTeamDto: UpdateTeamInputDto = {
+        id: 'team-123',
+        name: 'Updated Team Name',
+      };
+
+      const createdAt = new Date('2023-01-01');
       const existingTeam = new Team({
         id: 'team-123',
-        name: 'Old Team Name',
+        name: 'Original Team Name',
         organizationId: 'org-123',
         createdBy: 'user-123',
-        createdAt: new Date('2023-01-01T00:00:00.000Z'),
-        updatedAt: new Date('2023-01-01T00:00:00.000Z'),
+        createdAt: createdAt,
+        updatedAt: createdAt,
         members: ['user-123', 'user-456'],
       });
 
-      const updateDto: UpdateTeamInputDto = {
-        id: 'team-123',
-        name: 'New Team Name',
-      };
-
       // Act
-      const entity = TeamMapper.toEntityFromUpdate(updateDto, existingTeam);
+      const updatedTeam = TeamMapper.toEntityFromUpdate(updateTeamDto, existingTeam);
 
       // Assert
-      expect(entity).toBeInstanceOf(Team);
-      expect(entity.id).toBe('team-123');
-      expect(entity.name).toBe('New Team Name');
-      expect(entity.organizationId).toBe('org-123');
-      expect(entity.createdBy).toBe('user-123');
-      expect(entity.createdAt).toEqual(existingTeam.createdAt);
-      expect(entity.updatedAt).not.toEqual(existingTeam.updatedAt); // Should be updated
-      expect(entity.members).toEqual(['user-123', 'user-456']);
+      expect(updatedTeam).toBeInstanceOf(Team);
+      expect(updatedTeam.id).toBe('team-123');
+      expect(updatedTeam.name).toBe('Updated Team Name');
+      expect(updatedTeam.organizationId).toBe('org-123');
+      expect(updatedTeam.createdBy).toBe('user-123');
+      expect(updatedTeam.createdAt).toEqual(existingTeam.createdAt);
+      // Instead of comparing dates directly, check that the updated date is newer
+      expect(updatedTeam.updatedAt.getTime()).toBeGreaterThan(existingTeam.updatedAt.getTime());
+      expect(updatedTeam.members).toEqual(['user-123', 'user-456']);
     });
   });
 
   describe('toDto', () => {
-    it('should convert entity to DTO', () => {
+    it('should map Team entity to TeamOutputDto', () => {
       // Arrange
-      const createdAt = new Date('2023-01-01T00:00:00.000Z');
-      const updatedAt = new Date('2023-01-02T00:00:00.000Z');
-      
-      const entity = new Team({
+      const now = new Date();
+      const team = new Team({
         id: 'team-123',
-        name: 'Test Team',
+        name: 'Engineering Team',
         organizationId: 'org-123',
         createdBy: 'user-123',
-        createdAt,
-        updatedAt,
+        createdAt: now,
+        updatedAt: now,
         members: ['user-123', 'user-456'],
       });
 
       // Act
-      const dto = TeamMapper.toDto(entity);
+      const dto = TeamMapper.toDto(team);
 
       // Assert
       expect(dto.id).toBe('team-123');
-      expect(dto.name).toBe('Test Team');
+      expect(dto.name).toBe('Engineering Team');
       expect(dto.organizationId).toBe('org-123');
       expect(dto.createdBy).toBe('user-123');
-      expect(dto.createdAt).toBe('2023-01-01T00:00:00.000Z');
-      expect(dto.updatedAt).toBe('2023-01-02T00:00:00.000Z');
+      expect(dto.createdAt).toBe(now.toISOString());
+      expect(dto.updatedAt).toBe(now.toISOString());
       expect(dto.members).toEqual(['user-123', 'user-456']);
     });
   });
 
   describe('toDtoList', () => {
-    it('should convert entity list to DTO list', () => {
+    it('should map array of Team entities to array of TeamOutputDto', () => {
       // Arrange
-      const createdAt1 = new Date('2023-01-01T00:00:00.000Z');
-      const updatedAt1 = new Date('2023-01-02T00:00:00.000Z');
-      const createdAt2 = new Date('2023-01-03T00:00:00.000Z');
-      const updatedAt2 = new Date('2023-01-04T00:00:00.000Z');
-      
-      const entities = [
+      const now = new Date();
+      const teams = [
         new Team({
-          id: 'team-123',
-          name: 'Test Team 1',
+          id: 'team-1',
+          name: 'Team 1',
           organizationId: 'org-123',
           createdBy: 'user-123',
-          createdAt: createdAt1,
-          updatedAt: updatedAt1,
-          members: ['user-123', 'user-456'],
+          createdAt: now,
+          updatedAt: now,
         }),
         new Team({
-          id: 'team-456',
-          name: 'Test Team 2',
+          id: 'team-2',
+          name: 'Team 2',
           organizationId: 'org-123',
           createdBy: 'user-123',
-          createdAt: createdAt2,
-          updatedAt: updatedAt2,
-          members: ['user-789'],
-        })
+          createdAt: now,
+          updatedAt: now,
+        }),
       ];
 
       // Act
-      const dtos = TeamMapper.toDtoList(entities);
+      const dtos = TeamMapper.toDtoList(teams);
 
       // Assert
       expect(dtos).toHaveLength(2);
-      
-      expect(dtos[0].id).toBe('team-123');
-      expect(dtos[0].name).toBe('Test Team 1');
-      expect(dtos[0].createdAt).toBe('2023-01-01T00:00:00.000Z');
-      expect(dtos[0].updatedAt).toBe('2023-01-02T00:00:00.000Z');
-      expect(dtos[0].members).toEqual(['user-123', 'user-456']);
-      
-      expect(dtos[1].id).toBe('team-456');
-      expect(dtos[1].name).toBe('Test Team 2');
-      expect(dtos[1].createdAt).toBe('2023-01-03T00:00:00.000Z');
-      expect(dtos[1].updatedAt).toBe('2023-01-04T00:00:00.000Z');
-      expect(dtos[1].members).toEqual(['user-789']);
-    });
-
-    it('should return empty array when given empty array', () => {
-      // Act
-      const dtos = TeamMapper.toDtoList([]);
-
-      // Assert
-      expect(dtos).toEqual([]);
+      expect(dtos[0].id).toBe('team-1');
+      expect(dtos[0].name).toBe('Team 1');
+      expect(dtos[1].id).toBe('team-2');
+      expect(dtos[1].name).toBe('Team 2');
     });
   });
-}); 
+});

@@ -26,10 +26,10 @@ interface AcceptInvitationApiResponse {
 export class UserApiClient {
   /**
    * Fetches the current authenticated user profile
-   * @returns API response containing user data
+   * @returns API response containing user data or null if not authenticated
    * @throws ApiError if there's an error fetching the user
    */
-  async getCurrentUser(): Promise<UserApiResponse['data']> {
+  async getCurrentUser(): Promise<UserApiResponse['data'] | null> {
     try {
       const response = await httpService.get<UserApiResponse>('/api/users/me');
 
