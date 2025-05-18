@@ -34,8 +34,9 @@ const HomePage: NextPage = () => {
           // If we have an orgId parameter, show the accept invitation component
           setShowAcceptInvitation(true);
         } else {
+          console.log('orgId', orgId);
           // No orgId parameter, just redirect to dashboard
-          router.replace('/dashboard');
+          router.replace('/');
         }
       } else if (orgId) {
         // User not logged in but has orgId - store it for later use after login

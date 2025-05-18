@@ -63,7 +63,7 @@ export const SignupForm = ({ invite, orgId }: SignupFormProps) => {
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="space-y-2 text-center">
         <h1 className="text-3xl font-bold">Sign Up</h1>
-        <p className="text-gray-500">Enter your information to create an account</p>
+        <p className="text-gray-500">Sign up to nurture a culture of gratitude</p>
       </div>
 
       <Form {...form}>

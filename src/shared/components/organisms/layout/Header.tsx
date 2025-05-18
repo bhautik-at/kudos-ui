@@ -162,7 +162,8 @@ export const Header: React.FC<HeaderProps> = ({
         )}
 
         {/* Organization Selector */}
-        <div className="relative" ref={orgDropdownRef}>
+        <div className="relative flex" ref={orgDropdownRef}>
+          <p className="text-md font-semibold text-muted-foreground mt-1 mr-2">Organization:</p>
           <Button
             variant="outline"
             className="flex items-center py-1.5 px-3 text-slate-700 rounded-md border border-slate-200 hover:bg-slate-50 transition-colors"

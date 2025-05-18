@@ -103,7 +103,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
 
             {/* App Name - Only show when not collapsed */}
             {!effectiveCollapsed && (
-              <span className="ml-3 font-semibold text-xl tracking-tight">Kudos</span>
+              <span className="ml-3 font-semibold text-xl tracking-tight">Kudo Corner</span>
             )}
           </Link>
 

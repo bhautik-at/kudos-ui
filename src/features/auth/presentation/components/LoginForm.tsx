@@ -61,7 +61,7 @@ export const LoginForm = ({ invite, orgId }: LoginFormProps) => {
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="space-y-2 text-center">
         <h1 className="text-3xl font-bold">Log In</h1>
-        <p className="text-gray-500">Enter your email to login to your account</p>
+        <p className="text-gray-500">Login to nurture a culture of gratitude</p>
       </div>
 
       <Form {...form}>

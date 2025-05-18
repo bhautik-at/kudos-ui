@@ -68,7 +68,7 @@ export const KudoList: React.FC<KudoListProps> = ({ kudos, isLoading }) => {
       <div className="flex flex-col items-center justify-center p-8 text-center">
         <p className="text-muted-foreground mb-4">No kudos found.</p>
         <p className="text-muted-foreground text-sm">
-          Be the first to recognize someone's great work by creating a kudo!
+          Oops, the wall’s a bit empty. be the first to appreciate someone’s awesome work!
         </p>
       </div>
     );

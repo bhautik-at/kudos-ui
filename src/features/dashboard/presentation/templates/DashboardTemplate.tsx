@@ -14,6 +14,22 @@ import {
   KudoFilters as KudoFiltersType,
 } from '@/features/kudos/presentation/components/KudoFilters';
 import { KudosHeader } from '@/features/kudos/presentation/components/KudosHeader';
+import { Heart, Plus, Award, Filter, Search } from 'lucide-react';
+import { Button } from '@/shared/components/atoms/Button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/shared/components/atoms/Card';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/shared/components/atoms/Tooltip';
 
 export const DashboardTemplate = () => {
   const { user } = useUser();
@@ -95,41 +111,96 @@ export const DashboardTemplate = () => {
 
   return (
     <DashboardLayout>
-      <div className="grid gap-6">
-        <div className="bg-card text-card-foreground shadow-lg rounded-lg p-6">
-          <div className="flex justify-between items-center">
+      <div className="space-y-6">
+        {/* Dashboard Header - styled similar to UserManagementHeader */}
+        <div className="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+          <div className="flex items-center space-x-3">
+            <div className="rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 p-3 text-white shadow-md">
+              <Award className="h-6 w-6" />
+            </div>
             <div>
-              <h2 className="text-2xl font-bold mb-2">
-                Welcome to your dashboard{user?.firstName ? `, ${user.firstName}` : ''}!
-              </h2>
-              <p className="text-muted-foreground">
-                You can manage your Kudos and team members from here.
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                Kudo Wall
+              </h1>
+              <p className="text-md font-semibold text-muted-foreground mt-1">
+                Time to give some well-deserved kudos!”small wins and big efforts.
               </p>
             </div>
-            {organizationId && (
+          </div>
+
+          {organizationId && (
+            <div>
+              {/* Desktop version with text */}
+              <Button
+                onClick={handleOpenCreateKudoModal}
+                className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md transition-all"
+              >
+                <Heart className="h-4 w-4" />
+                <span>Give Kudos</span>
+              </Button>
+
+              {/* Mobile version with icon only */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleOpenCreateKudoModal}
+                      size="icon"
+                      className="md:hidden bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md"
+                      aria-label="Give Kudos"
+                    >
+                      <Heart className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Give Kudos</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
+        </div>
+
+        {/* Kudos list with modern styling */}
+        <Card className="border-0 shadow-lg rounded-xl overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600/10 to-purple-600/10 border-b border-blue-100 dark:border-purple-900/20">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <div>
-                <CreateKudoButton onClick={handleOpenCreateKudoModal} />
+                <CardTitle className="text-xl font-bold">Kudos</CardTitle>
+                <CardDescription className="text-gray-600 dark:text-gray-400">
+                  {kudos.length} kudos in your organization
+                </CardDescription>
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-blue-200 dark:border-blue-800 bg-white/80 dark:bg-gray-800/80"
+                onClick={() => applyFilters({})}
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Reset Filters
+              </Button>
+            </CardHeader>
+          </div>
+
+          <CardContent className="pt-6">
+            {/* Filters */}
+            {!isLoadingKudos && filterOptions && (
+              <div className="mb-6">
+                <KudoFilters
+                  recipients={filterOptions.recipients}
+                  teams={filterOptions.teams}
+                  categories={filterOptions.categories}
+                  onFilterChange={handleFilterChange}
+                />
               </div>
             )}
-          </div>
-        </div>
 
-        {/* Kudos list */}
-        <div className="bg-card text-card-foreground shadow-lg rounded-lg p-6">
-          <KudosHeader count={kudos.length} />
-
-          {/* Filters */}
-          {!isLoadingKudos && filterOptions && (
-            <KudoFilters
-              recipients={filterOptions.recipients}
-              teams={filterOptions.teams}
-              categories={filterOptions.categories}
-              onFilterChange={handleFilterChange}
-            />
-          )}
-
-          <KudoList kudos={kudos} isLoading={isLoadingKudos} />
-        </div>
+            {/* Kudo List */}
+            <KudoList kudos={kudos} isLoading={isLoadingKudos} />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Create Kudo Modal */}
