@@ -95,7 +95,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
     >
       {/* Logo */}
       <div className="flex items-center justify-between py-5 px-4 border-b">
-        <div className="flex-shrink-0 flex items-center">
+        <Link
+          href={buildHref('/dashboard')}
+          className="flex-shrink-0 flex items-center cursor-pointer"
+        >
           {/* App Logo */}
           <div className="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
             K
@@ -103,7 +106,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
 
           {/* App Name - Only show when not collapsed */}
           {!effectiveCollapsed && <span className="ml-3 font-semibold text-xl">Kudos</span>}
-        </div>
+        </Link>
 
         {/* Only show close button on mobile */}
         {isMobile && (
