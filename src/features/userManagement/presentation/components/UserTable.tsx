@@ -80,7 +80,7 @@ export const UserTable: React.FC = () => {
   };
 
   // Handle role change
-  const handleRoleChange = async (userId: string, role: UserRole) => {
+  const handleRoleChange = async (userId: string) => {
     if (role !== UserRole.TechLeader) {
       toastService.error('Permission denied - You do not have permission to change user roles');
       return;
@@ -175,7 +175,7 @@ export const UserTable: React.FC = () => {
                     {role === UserRole.TechLeader ? (
                       <Select
                         value={user.role}
-                        onValueChange={value => handleRoleChange(user.id, value as UserRole)}
+                        onValueChange={value => handleRoleChange(user.id)}
                         disabled={isLoading}
                       >
                         <SelectTrigger className="w-[140px] md:w-[180px]">

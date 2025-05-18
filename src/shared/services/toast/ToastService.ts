@@ -106,7 +106,7 @@ export class ToastService implements IToastService {
   dismiss(id?: string) {
     // This won't work outside React components
     // For non-React code, use the dismiss method returned by toast method
-    const toast = shadcnToast({ description: '' });
+    const toast = shadcnToast({});
     toast.dismiss();
 
     // When used via useToast hook, this will dismiss all toasts

@@ -87,21 +87,19 @@ export const OtpVerificationForm = () => {
 
         // Add a short delay to ensure auth state is updated
         // and toast is displayed before navigation
-        setTimeout(() => {
-          // If we have invite and orgId parameters, redirect to the dedicated verify-invite route
-          if (hasInvite && hasOrgId && orgId) {
-            router.push(`/verify-invite?orgId=${orgId}${invite ? `&invite=${invite}` : ''}`);
+        // If we have invite and orgId parameters, redirect to the dedicated verify-invite route
+        if (hasInvite && hasOrgId && orgId) {
+          router.push(`/verify-invite?orgId=${orgId}${invite ? `&invite=${invite}` : ''}`);
+        } else {
+          // No invite or orgId
+          if (isSignup) {
+            // New user - redirect to organization creation
+            router.push('/organization');
           } else {
-            // No invite or orgId
-            if (isSignup) {
-              // New user - redirect to organization creation
-              router.push('/organization');
-            } else {
-              // Existing user - redirect to organization selection
-              router.push('/organizations');
-            }
+            // Existing user - redirect to organization selection
+            router.push('/organizations');
           }
-        }, 1000);
+        }
       } else {
         toastService.error(`Verification Failed: ${result.message}`);
       }
