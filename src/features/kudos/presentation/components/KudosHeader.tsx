@@ -1,7 +1,7 @@
 import { KudoCreator } from './KudoCreator';
 
 interface KudosHeaderProps {
-  count: number;
+  count?: number;
   title?: string;
   organizationId?: string;
 }
