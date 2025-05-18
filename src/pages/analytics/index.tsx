@@ -15,9 +15,16 @@ const AnalyticsDashboardPage = () => {
   }, [router, orgId]);
 
   // Don't render anything until we have the orgId
+  if (!router.isReady) {
+    return null;
+  }
+
   if (!orgId) {
     return null;
   }
+
+  // Add debugging to see what's being passed
+  console.log('Analytics Dashboard - orgId from router:', orgId);
 
   return (
     <>
