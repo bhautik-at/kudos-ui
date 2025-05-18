@@ -12,6 +12,7 @@ import {
   MessageCircle,
   Tag,
   UserPlus,
+  LayoutDashboard,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/shared/components/atoms/Button';
@@ -50,7 +51,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
   };
 
   const sidebarItems = [
-    { icon: Home, label: 'User Management', href: '/user-management' },
+    { icon: LayoutDashboard, label: 'Dashboard', href: '/dashboard' },
+    { icon: Users, label: 'User Management', href: '/user-management' },
     { icon: Tag, label: 'Kudo Categories', href: '/kudo-categories' },
     { icon: Users, label: 'Teams', href: '/teams' },
     { icon: BarChart, label: 'Analytics', href: '/analytics' },
@@ -92,11 +94,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
       {/* Logo with Gradient Background */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-5 px-4">
         <div className="flex items-center justify-between">
-          <Link
-            href={buildHref('/dashboard')}
-            className="flex-shrink-0 flex items-center cursor-pointer"
-          >
-            {/* App Logo */}
+          {/* App Logo */}
+          <div className="flex-shrink-0 flex items-center">
             <div className="h-9 w-9 rounded-md bg-white/20 backdrop-blur-sm text-white flex items-center justify-center font-bold text-lg shadow-sm">
               K
             </div>
@@ -105,7 +104,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
             {!effectiveCollapsed && (
               <span className="ml-3 font-semibold text-xl tracking-tight">Kudo Corner</span>
             )}
-          </Link>
+          </div>
 
           {/* Only show close button on mobile */}
           {isMobile ? (

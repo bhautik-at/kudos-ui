@@ -163,6 +163,28 @@ export const UserTable: React.FC = () => {
     </div>
   );
 
+  const renderSkeletonRows = () => {
+    return [...Array(5)].map((_, index) => (
+      <TableRow key={`skeleton-${index}`} className="animate-pulse">
+        <TableCell>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+        </TableCell>
+        <TableCell>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+        </TableCell>
+        <TableCell>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+        </TableCell>
+        <TableCell>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+        </TableCell>
+        <TableCell>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+        </TableCell>
+      </TableRow>
+    ));
+  };
+
   return (
     <div className="space-y-4">
       <div className="bg-white dark:bg-gray-850 overflow-hidden rounded-xl border shadow-sm">
@@ -189,30 +211,9 @@ export const UserTable: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {isLoading && (
-                  <>
-                    {[...Array(5)].map((_, index) => (
-                      <TableRow key={index} className="animate-pulse">
-                        <TableCell>
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </>
-                )}
-                {!isLoading && users.length === 0 && (
+                {isLoading ? (
+                  renderSkeletonRows()
+                ) : users.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-12">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
@@ -222,113 +223,116 @@ export const UserTable: React.FC = () => {
                       </div>
                     </TableCell>
                   </TableRow>
-                )}
-                {users.map(user => (
-                  <TableRow
-                    key={user.id}
-                    className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
-                  >
-                    <TableCell className="font-medium whitespace-nowrap">{user.fullName}</TableCell>
-                    <TableCell className="whitespace-nowrap">{user.email}</TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      {user.teamName ? (
-                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                          {user.teamName}
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
-                          No team
-                        </span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {role === UserRole.TechLeader ? (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className="w-[160px] justify-between items-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
-                            >
-                              <span className="flex items-center">
-                                {user.role === UserRole.TechLeader ? (
-                                  <>
-                                    <Shield className="h-4 w-4 mr-2 text-purple-600" />
-                                    <span>Tech Leader</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <UserCircle className="h-4 w-4 mr-2 text-green-600" />
-                                    <span>Member</span>
-                                  </>
-                                )}
-                              </span>
-                              <ChevronDown className="h-4 w-4 opacity-50" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="start" className="w-[160px]">
-                            <DropdownMenuItem
-                              onClick={() => handleRoleChange(user.id, UserRole.TechLeader)}
-                              className="flex items-center"
-                            >
-                              <Shield className="h-4 w-4 mr-2 text-purple-600" />
-                              <span>Tech Leader</span>
-                              {user.role === UserRole.TechLeader && (
-                                <CheckCircle className="h-4 w-4 ml-auto text-green-500" />
-                              )}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleRoleChange(user.id, UserRole.Member)}
-                              className="flex items-center"
-                            >
-                              <UserCircle className="h-4 w-4 mr-2 text-green-600" />
-                              <span>Member</span>
-                              {user.role === UserRole.Member && (
-                                <CheckCircle className="h-4 w-4 ml-auto text-green-500" />
-                              )}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      ) : (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="flex items-center">
-                                {renderRoleBadge(user.role)}
-                                <Lock className="h-3.5 w-3.5 ml-2 text-muted-foreground" />
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Only Tech Leaders can change roles</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {role === UserRole.TechLeader ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
+                ) : (
+                  users.map(user => (
+                    <TableRow
+                      key={user.id}
+                      className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
+                    >
+                      <TableCell className="font-medium whitespace-nowrap">
+                        {user.fullName}
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">{user.email}</TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        {user.teamName ? (
+                          <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                            {user.teamName}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                            No team
+                          </span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {role === UserRole.TechLeader ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
                               <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 rounded-full text-red-500 hover:bg-red-50 hover:text-red-600"
-                                onClick={() => setUserToDelete(user.id)}
+                                variant="outline"
+                                className="w-[160px] justify-between items-center rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
                               >
-                                <Trash2 className="h-4 w-4" />
+                                <span className="flex items-center">
+                                  {user.role === UserRole.TechLeader ? (
+                                    <>
+                                      <Shield className="h-4 w-4 mr-2 text-purple-600" />
+                                      <span>Tech Leader</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <UserCircle className="h-4 w-4 mr-2 text-green-600" />
+                                      <span>Member</span>
+                                    </>
+                                  )}
+                                </span>
+                                <ChevronDown className="h-4 w-4 opacity-50" />
                               </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete User</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <Lock className="h-3.5 w-3.5 text-muted-foreground" />
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-[160px]">
+                              <DropdownMenuItem
+                                onClick={() => handleRoleChange(user.id, UserRole.TechLeader)}
+                                className="flex items-center"
+                              >
+                                <Shield className="h-4 w-4 mr-2 text-purple-600" />
+                                <span>Tech Leader</span>
+                                {user.role === UserRole.TechLeader && (
+                                  <CheckCircle className="h-4 w-4 ml-auto text-green-500" />
+                                )}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleRoleChange(user.id, UserRole.Member)}
+                                className="flex items-center"
+                              >
+                                <UserCircle className="h-4 w-4 mr-2 text-green-600" />
+                                <span>Member</span>
+                                {user.role === UserRole.Member && (
+                                  <CheckCircle className="h-4 w-4 ml-auto text-green-500" />
+                                )}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="flex items-center">
+                                  {renderRoleBadge(user.role)}
+                                  <Lock className="h-3.5 w-3.5 ml-2 text-muted-foreground" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Only Tech Leaders can change roles</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {role === UserRole.TechLeader ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 rounded-full text-red-500 hover:bg-red-50 hover:text-red-600"
+                                  onClick={() => setUserToDelete(user.id)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Delete User</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
           </div>

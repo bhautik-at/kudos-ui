@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { TeamApiClient } from '../../infrastructure/api/TeamApiClient';
 import { TeamRepository } from '../../infrastructure/repositories/TeamRepository';
 import { ListTeamsByOrganizationUseCase } from '../../application/useCases/ListTeamsByOrganizationUseCase';
@@ -22,52 +22,49 @@ export function useTeamList(organizationId: string) {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
-  useEffect(() => {
+  const fetchTeams = useCallback(async () => {
     if (!organizationId) return;
 
-    const fetchTeams = async () => {
-      setIsLoading(true);
-      setError(null);
+    setIsLoading(true);
+    setError(null);
 
-      try {
-        // Initialize dependencies
-        const apiClient = new TeamApiClient();
-        const teamRepository = new TeamRepository(apiClient);
-        const teamMemberRepository = new TeamMemberRepository(apiClient);
+    try {
+      // Initialize dependencies
+      const apiClient = new TeamApiClient();
+      const teamRepository = new TeamRepository(apiClient);
+      const teamMemberRepository = new TeamMemberRepository(apiClient);
 
-        // Create use cases
-        const listTeamsUseCase = new ListTeamsByOrganizationUseCase(teamRepository);
-        const getTeamMembersUseCase = new GetTeamMembersUseCase(
-          teamRepository,
-          teamMemberRepository
-        );
+      // Create use cases
+      const listTeamsUseCase = new ListTeamsByOrganizationUseCase(teamRepository);
+      const getTeamMembersUseCase = new GetTeamMembersUseCase(teamRepository, teamMemberRepository);
 
-        // Fetch basic team data
-        const teamsData = await listTeamsUseCase.execute(organizationId);
+      // Fetch basic team data
+      const teamsData = await listTeamsUseCase.execute(organizationId);
 
-        // Fetch members for each team
-        const teamsWithMembers = await Promise.all(
-          teamsData.map(async team => {
-            try {
-              const members = await getTeamMembersUseCase.execute(team.id);
-              return { ...team, members };
-            } catch (memberError) {
-              console.error(`Error fetching members for team ${team.id}:`, memberError);
-              return { ...team, members: [] };
-            }
-          })
-        );
+      // Fetch members for each team
+      const teamsWithMembers = await Promise.all(
+        teamsData.map(async team => {
+          try {
+            const members = await getTeamMembersUseCase.execute(team.id);
+            return { ...team, members };
+          } catch (memberError) {
+            console.error(`Error fetching members for team ${team.id}:`, memberError);
+            return { ...team, members: [] };
+          }
+        })
+      );
 
-        setTeams(teamsWithMembers);
-      } catch (err) {
-        setError(err instanceof Error ? err : new Error(String(err)));
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTeams();
+      setTeams(teamsWithMembers);
+    } catch (err) {
+      setError(err instanceof Error ? err : new Error(String(err)));
+    } finally {
+      setIsLoading(false);
+    }
   }, [organizationId]);
 
-  return { teams, isLoading, error };
+  useEffect(() => {
+    fetchTeams();
+  }, [fetchTeams]);
+
+  return { teams, isLoading, error, refetchTeams: fetchTeams };
 }
