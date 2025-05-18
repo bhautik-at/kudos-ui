@@ -80,14 +80,14 @@ export const UserTable: React.FC = () => {
   };
 
   // Handle role change
-  const handleRoleChange = async (userId: string, role: UserRole) => {
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
     if (role !== UserRole.TechLeader) {
       toastService.error('Permission denied - You do not have permission to change user roles');
       return;
     }
 
     try {
-      await updateUserRole(userId, role);
+      await updateUserRole(userId, newRole);
       toastService.success('User role updated successfully');
     } catch (error) {
       toastService.error(

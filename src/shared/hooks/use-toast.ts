@@ -1,7 +1,7 @@
 'use client';
 
 import { useToast as useShadcnToast, toast as shadcnToast } from '@/components/hooks/use-toast';
-import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
+import type { ToastActionElement } from '@/components/ui/toast';
 import { ToastVariant } from '@/shared/components/atoms/toast';
 import {
   IToastService,
@@ -44,7 +44,6 @@ export function useToast(): IToastService {
 
     return shadcnToast({
       title,
-      description: title || 'Something happened', // Use title as description if provided
       action,
       duration: options?.duration || 5000,
       ...toastOptions,
