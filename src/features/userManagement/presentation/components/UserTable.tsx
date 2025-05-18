@@ -173,9 +173,6 @@ export const UserTable: React.FC = () => {
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
         </TableCell>
         <TableCell>
-          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-        </TableCell>
-        <TableCell>
           <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
         </TableCell>
         <TableCell>
@@ -205,7 +202,6 @@ export const UserTable: React.FC = () => {
                     </Button>
                   </TableHead>
                   <TableHead className="w-[200px] font-medium">Email</TableHead>
-                  <TableHead className="w-[100px] font-medium">Team</TableHead>
                   <TableHead className="w-[180px] font-medium">Role</TableHead>
                   <TableHead className="w-[80px] font-medium text-right pr-4">Actions</TableHead>
                 </TableRow>
@@ -215,7 +211,7 @@ export const UserTable: React.FC = () => {
                   renderSkeletonRows()
                 ) : users.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12">
+                    <TableCell colSpan={4} className="text-center py-12">
                       <div className="flex flex-col items-center justify-center text-muted-foreground">
                         <Users className="h-12 w-12 mb-2 opacity-30" />
                         <p className="text-lg">No users found</p>
@@ -233,17 +229,6 @@ export const UserTable: React.FC = () => {
                         {user.fullName}
                       </TableCell>
                       <TableCell className="whitespace-nowrap">{user.email}</TableCell>
-                      <TableCell className="whitespace-nowrap">
-                        {user.teamName ? (
-                          <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
-                            {user.teamName}
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
-                            No team
-                          </span>
-                        )}
-                      </TableCell>
                       <TableCell>
                         {role === UserRole.TechLeader ? (
                           <DropdownMenu>
