@@ -142,7 +142,7 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header
       className={cn(
-        'flex items-center justify-between px-4 py-2 bg-background border-b border-border',
+        'flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200 shadow-sm',
         className
       )}
     >
@@ -154,42 +154,42 @@ export const Header: React.FC<HeaderProps> = ({
             onClick={onMenuClick}
             variant="ghost"
             size="icon"
-            className="mr-2 p-2 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent md:hidden"
+            className="mr-3 p-2 rounded-md text-slate-500 hover:text-slate-700 hover:bg-slate-100 md:hidden"
             aria-label="Toggle sidebar"
           >
             <Menu size={24} />
           </Button>
         )}
 
-        {/* Organization Selector - Replace the search */}
+        {/* Organization Selector */}
         <div className="relative" ref={orgDropdownRef}>
           <Button
-            variant="ghost"
-            className="flex items-center py-1 px-2 border border-transparent hover:border-gray-200 rounded-md"
+            variant="outline"
+            className="flex items-center py-1.5 px-3 text-slate-700 rounded-md border border-slate-200 hover:bg-slate-50 transition-colors"
             onClick={() => setShowOrgDropdown(!showOrgDropdown)}
             disabled={isLoading}
           >
             <span className="mr-2 font-medium truncate max-w-[200px]">
               {isLoading ? 'Loading...' : currentOrganization?.name || 'Select Organization'}
             </span>
-            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+            <ChevronDown className="h-4 w-4 text-slate-400" />
           </Button>
 
           {/* Organization dropdown */}
           {showOrgDropdown && (
-            <div className="absolute left-0 top-full mt-1 w-64 rounded-md shadow-lg bg-white border border-gray-200 z-50">
+            <div className="absolute left-0 top-full mt-1 w-64 rounded-md shadow-lg bg-white border border-slate-200 z-50">
               {/* Search box */}
-              <div className="p-2 border-b border-gray-200">
+              <div className="p-2 border-b border-slate-200">
                 <div className="relative">
                   <Input
                     type="text"
                     value={orgSearchValue}
                     onChange={e => setOrgSearchValue(e.target.value)}
-                    className="w-full py-1 pl-8 pr-2 text-sm"
+                    className="w-full py-1 pl-8 pr-2 text-sm bg-slate-50 border-slate-200 focus:border-blue-300"
                     placeholder="Search organizations..."
                     toggleButton={
                       <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                        <Search className="w-4 h-4 text-muted-foreground" />
+                        <Search className="w-4 h-4 text-slate-400" />
                       </div>
                     }
                   />
@@ -199,22 +199,22 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Organizations list */}
               <div className="max-h-60 overflow-y-auto">
                 {isLoading ? (
-                  <div className="py-2 px-3 text-sm text-gray-500">Loading organizations...</div>
+                  <div className="py-2 px-3 text-sm text-slate-500">Loading organizations...</div>
                 ) : filteredOrganizations.length === 0 ? (
-                  <div className="py-2 px-3 text-sm text-gray-500">No organizations found</div>
+                  <div className="py-2 px-3 text-sm text-slate-500">No organizations found</div>
                 ) : (
                   <div className="py-1">
                     {filteredOrganizations.map(org => (
                       <button
                         key={org.id}
                         className={cn(
-                          'flex items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-100',
-                          org.id === orgId && 'bg-gray-50'
+                          'flex items-center w-full px-3 py-2 text-sm text-left hover:bg-slate-50 transition-colors',
+                          org.id === orgId && 'bg-blue-50 text-blue-600'
                         )}
                         onClick={() => selectOrganization(org)}
                       >
                         <span className="flex-1 truncate">{org.name}</span>
-                        {org.id === orgId && <Check className="h-4 w-4 text-primary ml-2" />}
+                        {org.id === orgId && <Check className="h-4 w-4 text-blue-500 ml-2" />}
                       </button>
                     ))}
                   </div>
@@ -232,26 +232,26 @@ export const Header: React.FC<HeaderProps> = ({
           variant="ghost"
           onClick={() => setShowUserMenu(!showUserMenu)}
         >
-          <div className="h-9 w-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-medium">
+          <div className="h-9 w-9 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-white flex items-center justify-center font-medium shadow-sm">
             {userInitial}
           </div>
         </Button>
 
-        {/* Simple User Menu Dropdown */}
+        {/* User Menu Dropdown */}
         {showUserMenu && (
-          <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white border border-gray-200 z-50">
-            <div className="p-4 space-y-1">
+          <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white border border-slate-200 z-50 overflow-hidden">
+            <div className="p-4 space-y-1 bg-gradient-to-r from-blue-600 to-blue-500 text-white">
               <div className="text-sm font-medium">Hi {user?.firstName || 'User'}!</div>
-              <div className="text-xs text-gray-500 truncate">{user?.email}</div>
+              <div className="text-xs text-white/80 truncate">{user?.email}</div>
             </div>
-            <div className="border-t border-gray-200">
+            <div className="border-t border-slate-200">
               <Button
                 onClick={handleLogout}
                 variant="ghost"
-                className="flex w-full items-center justify-start px-4 py-3 text-sm text-gray-700 hover:bg-gray-100"
+                className="flex w-full items-center justify-start px-4 py-3 text-sm text-slate-700 hover:bg-slate-50 transition-colors"
                 disabled={isLoggingOut}
               >
-                <LogOut className="w-4 h-4 mr-2" />
+                <LogOut className="w-4 h-4 mr-2 text-slate-400" />
                 {isLoggingOut ? 'Logging out...' : 'Logout'}
               </Button>
             </div>

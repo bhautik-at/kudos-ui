@@ -82,65 +82,59 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
   return (
     <aside
       className={cn(
-        'bg-white text-gray-800 flex flex-col h-full',
+        'bg-white flex flex-col h-full shadow-sm',
         effectiveCollapsed ? 'w-[72px]' : 'w-64',
-        'transition-all duration-200 ease-in-out',
-        isMobile ? 'max-h-screen' : 'h-screen border-r',
+        'transition-all duration-300 ease-in-out',
+        isMobile ? 'max-h-screen' : 'h-screen border-r border-slate-200',
         className
       )}
     >
-      {/* Logo */}
-      <div className="flex items-center justify-between py-5 px-4 border-b">
-        <Link
-          href={buildHref('/dashboard')}
-          className="flex-shrink-0 flex items-center cursor-pointer"
-        >
-          {/* App Logo */}
-          <div className="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
-            K
-          </div>
-
-          {/* App Name - Only show when not collapsed */}
-          {!effectiveCollapsed && <span className="ml-3 font-semibold text-xl">Kudos</span>}
-        </Link>
-
-        {/* Only show close button on mobile */}
-        {isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            aria-label="Close sidebar"
-            onClick={toggleSidebar}
+      {/* Logo with Gradient Background */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-500 text-white py-5 px-4">
+        <div className="flex items-center justify-between">
+          <Link
+            href={buildHref('/dashboard')}
+            className="flex-shrink-0 flex items-center cursor-pointer"
           >
-            <ChevronLeft size={16} />
-          </Button>
-        )}
+            {/* App Logo */}
+            <div className="h-9 w-9 rounded-md bg-white/20 backdrop-blur-sm text-white flex items-center justify-center font-bold text-lg shadow-sm">
+              K
+            </div>
+
+            {/* App Name - Only show when not collapsed */}
+            {!effectiveCollapsed && (
+              <span className="ml-3 font-semibold text-xl tracking-tight">Kudos</span>
+            )}
+          </Link>
+
+          {/* Only show close button on mobile */}
+          {isMobile ? (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10"
+              aria-label="Close sidebar"
+              onClick={toggleSidebar}
+            >
+              <ChevronLeft size={16} />
+            </Button>
+          ) : (
+            <Button
+              onClick={toggleSidebar}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 rounded-full flex items-center justify-center text-white/80 hover:text-white hover:bg-white/10"
+              aria-label={effectiveCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            >
+              {effectiveCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+            </Button>
+          )}
+        </div>
       </div>
 
-      {/* Toggle Button - Now positioned at the right edge when expanded but only on desktop */}
-      {!isMobile && (
-        <div
-          className={cn(
-            'relative py-2',
-            effectiveCollapsed ? 'flex justify-center' : 'flex justify-end pr-3'
-          )}
-        >
-          <Button
-            onClick={toggleSidebar}
-            variant="ghost"
-            size="icon"
-            className="h-6 w-6 rounded-full flex items-center justify-center text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-            aria-label={effectiveCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-          >
-            {effectiveCollapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
-          </Button>
-        </div>
-      )}
-
       {/* Navigation Menu */}
-      <ScrollArea className="flex-1">
-        <nav className="py-4 px-2 space-y-1">
+      <ScrollArea className="flex-1 py-2">
+        <nav className="py-2 px-2 space-y-1">
           {sidebarItems.map(item => {
             const hrefWithQuery = buildHref(item.href);
             const isActive =
@@ -153,21 +147,25 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
                     <Link
                       href={hrefWithQuery}
                       className={cn(
-                        'flex items-center rounded-md transition-colors my-1',
-                        effectiveCollapsed ? 'justify-center h-10 w-10 mx-auto' : 'py-2 px-3',
+                        'flex items-center rounded-md transition-all duration-200 my-1',
+                        effectiveCollapsed ? 'justify-center h-10 w-10 mx-auto' : 'py-2.5 px-3',
                         isActive
-                          ? 'bg-blue-50 text-blue-600'
-                          : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                          ? 'bg-blue-50 text-blue-600 font-medium'
+                          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                       )}
                     >
-                      <item.icon className={cn('h-5 w-5', effectiveCollapsed ? '' : 'mr-3')} />
-                      {!effectiveCollapsed && (
-                        <span className="text-sm font-medium">{item.label}</span>
-                      )}
+                      <item.icon
+                        className={cn(
+                          'flex-shrink-0',
+                          effectiveCollapsed ? 'h-5 w-5' : 'h-5 w-5 mr-3',
+                          isActive ? 'text-blue-600' : 'text-slate-500'
+                        )}
+                      />
+                      {!effectiveCollapsed && <span className="text-sm">{item.label}</span>}
                     </Link>
                   </TooltipTrigger>
                   {effectiveCollapsed && !isMobile && (
-                    <TooltipContent side="right" className="bg-white text-gray-800">
+                    <TooltipContent side="right" className="bg-white text-slate-800 shadow-md">
                       {item.label}
                     </TooltipContent>
                   )}
