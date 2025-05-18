@@ -14,6 +14,7 @@ interface AuthUser {
   email: string;
   firstName: string;
   lastName: string;
+  role: string;
 }
 
 interface AuthContextProps {
@@ -47,6 +48,7 @@ interface AuthContextProps {
     success: boolean;
     message: string;
     token?: string;
+    user?: AuthUser;
   }>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -177,22 +179,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const refreshToken = async () => {
     setError(null);
     try {
-      console.log('AuthContext: Starting token refresh');
       const result = await refreshTokenUseCase.execute({});
-      console.log('AuthContext: Token refresh result:', result);
 
       if (result.success && result.token) {
-        console.log('AuthContext: Setting new auth token');
         // Set token in HTTP service for future authenticated requests
         httpService.setAuthToken(result.token);
-
-        // Set user data if available
-        if (result.user) {
-          console.log('AuthContext: Updating user data after refresh token');
-          // Note: In this version of the context, we don't manage user state here
-        }
-      } else {
-        console.log('AuthContext: Token refresh did not return a new token');
       }
 
       return result;

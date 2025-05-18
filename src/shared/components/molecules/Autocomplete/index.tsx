@@ -1,0 +1,144 @@
+import { useState, useEffect, useRef, forwardRef } from 'react';
+import type { ComponentPropsWithoutRef, ElementRef } from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command';
+import { cn } from '@/lib/utils';
+import { MdCheck, MdKeyboardArrowDown } from 'react-icons/md';
+
+export type AutocompleteOption = {
+  value: string;
+  label: string;
+};
+
+export type AutocompleteProps = {
+  options: AutocompleteOption[];
+  placeholder?: string;
+  emptyMessage?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+  disabled?: boolean;
+  triggerClassName?: string;
+  contentClassName?: string;
+  searchPlaceholder?: string;
+  openOnFocus?: boolean;
+  filterFunction?: (option: AutocompleteOption, searchValue: string) => boolean;
+  renderOption?: (option: AutocompleteOption, isSelected: boolean) => React.ReactNode;
+};
+
+export const Autocomplete = forwardRef<ElementRef<typeof PopoverTrigger>, AutocompleteProps>(
+  (
+    {
+      options,
+      placeholder = 'Select an option',
+      emptyMessage = 'No results found.',
+      value,
+      onChange,
+      disabled = false,
+      triggerClassName,
+      contentClassName,
+      searchPlaceholder = 'Search...',
+      openOnFocus = false,
+      filterFunction,
+      renderOption,
+    },
+    ref
+  ) => {
+    const [open, setOpen] = useState(false);
+    const [selectedValue, setSelectedValue] = useState(value || '');
+    const triggerRef = useRef<HTMLButtonElement>(null);
+
+    // Find the selected option based on value
+    const selectedOption = options.find(option => option.value === selectedValue);
+
+    // Update internal state when value prop changes
+    useEffect(() => {
+      if (value !== undefined) {
+        setSelectedValue(value);
+      }
+    }, [value]);
+
+    // Default filter function
+    const defaultFilterFunction = (option: AutocompleteOption, searchValue: string) => {
+      return option.label.toLowerCase().includes(searchValue.toLowerCase());
+    };
+
+    // Use provided filter function or default
+    const finalFilterFunction = filterFunction || defaultFilterFunction;
+
+    // Default render function
+    const defaultRenderOption = (option: AutocompleteOption, isSelected: boolean) => (
+      <>
+        {option.label}
+        {isSelected && <MdCheck className="ml-auto" />}
+      </>
+    );
+
+    // Use provided render function or default
+    const finalRenderOption = renderOption || defaultRenderOption;
+
+    const handleSelect = (selectedOptionValue: string) => {
+      setSelectedValue(selectedOptionValue);
+      onChange?.(selectedOptionValue);
+      setOpen(false);
+    };
+
+    return (
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger
+          ref={node => {
+            // Handle both the forwarded ref and our local ref
+            if (typeof ref === 'function') {
+              ref(node);
+            } else if (ref) {
+              ref.current = node;
+            }
+            triggerRef.current = node;
+          }}
+          disabled={disabled}
+          onClick={() => !disabled && setOpen(true)}
+          className={cn(
+            'flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+            triggerClassName
+          )}
+        >
+          {selectedOption ? selectedOption.label : placeholder}
+          <MdKeyboardArrowDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </PopoverTrigger>
+        <PopoverContent
+          className={cn('p-0', contentClassName)}
+          style={{
+            width: triggerRef.current?.offsetWidth
+              ? `${triggerRef.current.offsetWidth}px`
+              : 'var(--radix-popover-trigger-width)',
+          }}
+          align="start"
+          sideOffset={4}
+          avoidCollisions
+        >
+          <Command>
+            <CommandInput placeholder={searchPlaceholder} />
+            <CommandList>
+              <CommandEmpty>{emptyMessage}</CommandEmpty>
+              <CommandGroup>
+                {options.map(option => (
+                  <CommandItem key={option.value} value={option.value} onSelect={handleSelect}>
+                    {finalRenderOption(option, option.value === selectedValue)}
+                  </CommandItem>
+                ))}
+              </CommandGroup>
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+);
+
+Autocomplete.displayName = 'Autocomplete';

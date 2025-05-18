@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, Plus, LogOut, Menu } from 'lucide-react';
+import { Search, LogOut, Menu, Check, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/features/auth/presentation/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/shared/components/atoms/Button';
@@ -14,6 +14,7 @@ import { useUser } from '@/features/users/presentation/contexts/UserContext';
 import { toastService } from '@/shared/services/toast';
 import { useRouter } from 'next/router';
 import { httpService } from '@/shared/services/http/HttpService';
+import { useOrganizations } from '@/features/organizations/presentation/hooks/useOrganizations';
 
 interface HeaderProps {
   className?: string;
@@ -32,9 +33,20 @@ export const Header: React.FC<HeaderProps> = ({
   const { user, setUserFromAuth } = useUser();
   const router = useRouter();
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [searchValue, setSearchValue] = useState('');
+  const [showOrgDropdown, setShowOrgDropdown] = useState(false);
+  const [orgSearchValue, setOrgSearchValue] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
+  const orgDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Get current organization ID from URL query param
+  const orgId = router.query.orgId as string;
+
+  // Fetch organizations list
+  const { organizations, isLoading } = useOrganizations();
+
+  // Find current organization in the list
+  const currentOrganization = orgId ? organizations.find(org => org.id === orgId) : null;
 
   // Get user initial for avatar
   const userInitial = user?.firstName?.charAt(0) || user?.email?.charAt(0)?.toUpperCase() || 'U';
@@ -45,6 +57,10 @@ export const Header: React.FC<HeaderProps> = ({
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
         setShowUserMenu(false);
       }
+
+      if (orgDropdownRef.current && !orgDropdownRef.current.contains(event.target as Node)) {
+        setShowOrgDropdown(false);
+      }
     };
 
     document.addEventListener('mousedown', handleClickOutside);
@@ -52,6 +68,26 @@ export const Header: React.FC<HeaderProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Filter organizations based on search
+  const filteredOrganizations = organizations.filter(org =>
+    org.name.toLowerCase().includes(orgSearchValue.toLowerCase())
+  );
+
+  // Handle organization selection
+  const selectOrganization = (org: { id: string; name: string }) => {
+    const currentPath = router.pathname;
+
+    // Replace the orgId query parameter
+    router.push({
+      pathname: currentPath,
+      query: { ...router.query, orgId: org.id },
+    });
+
+    // Close the dropdown
+    setShowOrgDropdown(false);
+    setOrgSearchValue('');
+  };
 
   const handleLogout = async () => {
     try {
@@ -70,7 +106,7 @@ export const Header: React.FC<HeaderProps> = ({
       httpService.clearAuthToken();
 
       // Show logout in progress toast
-      toastService.info('Logging out...', 'Please wait');
+      toastService.info('Logging out - Please wait');
 
       // Call the Auth service logout
       await logout();
@@ -87,10 +123,9 @@ export const Header: React.FC<HeaderProps> = ({
       console.error('Logout failed:', error);
 
       // Show error toast
-      toastService.error(
-        'Logout failed',
-        error instanceof Error ? error.message : 'An unexpected error occurred'
-      );
+      toastService.error('Logout failed', {
+        duration: 3000,
+      });
 
       // Still clear user data and localStorage even if API fails
       if (typeof window !== 'undefined') {
@@ -111,7 +146,7 @@ export const Header: React.FC<HeaderProps> = ({
         className
       )}
     >
-      {/* Left Section - Mobile menu button and Search for desktop */}
+      {/* Left Section - Mobile menu button and Organization selector */}
       <div className={cn('flex items-center', isMobile ? 'w-auto' : 'flex-1 max-w-xl')}>
         {/* Mobile menu button - only shown on mobile */}
         {showMenuButton && isMobile && (
@@ -126,68 +161,69 @@ export const Header: React.FC<HeaderProps> = ({
           </Button>
         )}
 
-        {/* Search Organization - shown at left on desktop, centered on mobile */}
-        {!isMobile ? (
-          <div className="flex items-center w-full ml-1">
-            <div className="relative flex-1 max-w-md">
-              <Input
-                type="text"
-                value={searchValue}
-                onChange={e => setSearchValue(e.target.value)}
-                className="w-full py-2 pl-10 pr-4 text-sm"
-                placeholder="Search organization..."
-                data-testid="search-input"
-                toggleButton={
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <Search className="w-5 h-5 text-muted-foreground" />
-                  </div>
-                }
-              />
-            </div>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button className="ml-2 p-2" size="icon" aria-label="Add organization">
-                    <Plus className="w-5 h-5" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Add organization</TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        ) : null}
-      </div>
+        {/* Organization Selector - Replace the search */}
+        <div className="relative" ref={orgDropdownRef}>
+          <Button
+            variant="ghost"
+            className="flex items-center py-1 px-2 border border-transparent hover:border-gray-200 rounded-md"
+            onClick={() => setShowOrgDropdown(!showOrgDropdown)}
+            disabled={isLoading}
+          >
+            <span className="mr-2 font-medium truncate max-w-[200px]">
+              {isLoading ? 'Loading...' : currentOrganization?.name || 'Select Organization'}
+            </span>
+            <ChevronDown className="h-4 w-4 text-muted-foreground" />
+          </Button>
 
-      {/* Center Section - Search only for mobile */}
-      {isMobile && (
-        <div className="flex items-center flex-1 mx-2">
-          <div className="relative w-full">
-            <Input
-              type="text"
-              value={searchValue}
-              onChange={e => setSearchValue(e.target.value)}
-              className="w-full py-2 pl-10 pr-4 text-sm"
-              placeholder="Search..."
-              data-testid="search-input"
-              toggleButton={
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                  <Search className="w-5 h-5 text-muted-foreground" />
+          {/* Organization dropdown */}
+          {showOrgDropdown && (
+            <div className="absolute left-0 top-full mt-1 w-64 rounded-md shadow-lg bg-white border border-gray-200 z-50">
+              {/* Search box */}
+              <div className="p-2 border-b border-gray-200">
+                <div className="relative">
+                  <Input
+                    type="text"
+                    value={orgSearchValue}
+                    onChange={e => setOrgSearchValue(e.target.value)}
+                    className="w-full py-1 pl-8 pr-2 text-sm"
+                    placeholder="Search organizations..."
+                    toggleButton={
+                      <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+                        <Search className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    }
+                  />
                 </div>
-              }
-            />
-          </div>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button className="ml-1 p-1" size="icon" aria-label="Add organization">
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Add organization</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              </div>
+
+              {/* Organizations list */}
+              <div className="max-h-60 overflow-y-auto">
+                {isLoading ? (
+                  <div className="py-2 px-3 text-sm text-gray-500">Loading organizations...</div>
+                ) : filteredOrganizations.length === 0 ? (
+                  <div className="py-2 px-3 text-sm text-gray-500">No organizations found</div>
+                ) : (
+                  <div className="py-1">
+                    {filteredOrganizations.map(org => (
+                      <button
+                        key={org.id}
+                        className={cn(
+                          'flex items-center w-full px-3 py-2 text-sm text-left hover:bg-gray-100',
+                          org.id === orgId && 'bg-gray-50'
+                        )}
+                        onClick={() => selectOrganization(org)}
+                      >
+                        <span className="flex-1 truncate">{org.name}</span>
+                        {org.id === orgId && <Check className="h-4 w-4 text-primary ml-2" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Right Section - User Profile */}
       <div className="relative" ref={userMenuRef}>

@@ -30,8 +30,7 @@ export function useOrganizations() {
 
       // Show error message
       toast({
-        title: 'Error',
-        description: `Failed to fetch organizations: ${error.message}`,
+        title: `Error - Failed to fetch organizations: ${error.message}`,
         type: 'error',
       });
     } finally {

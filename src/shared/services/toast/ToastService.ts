@@ -28,13 +28,11 @@ export class ToastService implements IToastService {
   toast({
     type = 'default',
     title,
-    description,
     action,
     options,
   }: {
     type?: ToastType;
     title?: string;
-    description: string;
     action?: ToastActionElement;
     options?: ToastOptions;
   }) {
@@ -47,7 +45,6 @@ export class ToastService implements IToastService {
     return shadcnToast({
       variant,
       title,
-      description,
       action,
       duration: options?.duration || this.defaultDuration,
       className:
@@ -59,11 +56,10 @@ export class ToastService implements IToastService {
   /**
    * Show a success toast notification
    */
-  success(title: string, description?: string, options?: ToastOptions) {
+  success(title: string, options?: ToastOptions) {
     return this.toast({
       type: 'success',
       title,
-      description: description || '',
       options,
     });
   }
@@ -71,11 +67,10 @@ export class ToastService implements IToastService {
   /**
    * Show an error toast notification
    */
-  error(title: string, description?: string, options?: ToastOptions) {
+  error(title: string, options?: ToastOptions) {
     return this.toast({
       type: 'destructive',
       title,
-      description: description || '',
       options,
     });
   }
@@ -83,11 +78,10 @@ export class ToastService implements IToastService {
   /**
    * Show an info toast notification
    */
-  info(title: string, description?: string, options?: ToastOptions) {
+  info(title: string, options?: ToastOptions) {
     return this.toast({
       type: 'info',
       title,
-      description: description || '',
       options,
     });
   }
@@ -95,11 +89,10 @@ export class ToastService implements IToastService {
   /**
    * Show a warning toast notification
    */
-  warning(title: string, description?: string, options?: ToastOptions) {
+  warning(title: string, options?: ToastOptions) {
     return this.toast({
       type: 'warning',
       title,
-      description: description || '',
       options,
     });
   }
@@ -113,7 +106,7 @@ export class ToastService implements IToastService {
   dismiss(id?: string) {
     // This won't work outside React components
     // For non-React code, use the dismiss method returned by toast method
-    const toast = shadcnToast({ description: '' });
+    const toast = shadcnToast({});
     toast.dismiss();
 
     // When used via useToast hook, this will dismiss all toasts

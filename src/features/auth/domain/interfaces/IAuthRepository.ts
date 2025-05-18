@@ -20,7 +20,13 @@ export interface IAuthRepository {
     success: boolean;
     message: string;
     token?: string;
-    user?: any;
+    user?: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+    };
   }>;
 
   resendOtp(email: string): Promise<{
@@ -34,7 +40,13 @@ export interface IAuthRepository {
     success: boolean;
     message: string;
     token?: string;
-    user?: any;
+    user?: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+    };
   }>;
 
   logout(): Promise<{

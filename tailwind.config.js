@@ -48,6 +48,14 @@ export default {
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',
+        'kudo-pink': '#FF5A8C',
+        'kudo-blue': '#3D9AE2',
+        'kudo-orange': '#FF8A47',
+        'kudo-purple': '#A066FF',
+        'kudo-teal': '#41C7B9',
+        'kudo-green': '#4CAF50',
+        'kudo-emerald': '#2DD4BF',
+        'kudo-yellow': '#FFD166',
         chart: {
           1: 'hsl(var(--chart-1))',
           2: 'hsl(var(--chart-2))',
@@ -133,6 +141,14 @@ export default {
             transform: 'translateY(0)',
           },
         },
+        'fade-in': {
+          '0%': {
+            opacity: '0',
+          },
+          '100%': {
+            opacity: '1',
+          },
+        },
         'accordion-down': {
           from: {
             height: '0',
@@ -152,6 +168,7 @@ export default {
       },
       animation: {
         'fade-up': 'fade-up 0.5s ease-out',
+        'fade-in': 'fade-in 0.4s ease-out',
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },

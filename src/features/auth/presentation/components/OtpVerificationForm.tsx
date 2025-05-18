@@ -4,10 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useRouter } from 'next/router';
 import { useAuth } from '../contexts/AuthContext';
+import { useUser } from '@/features/users/presentation/contexts/UserContext';
 import { Button } from '@/shared/components/atoms/Button';
 import { Input } from '@/shared/components/atoms/Input';
 import { Label } from '@/shared/components/atoms/Label';
 import { toastService } from '@/shared/services/toast';
+import { AcceptInvitation } from '@/features/users/presentation/components/AcceptInvitation';
 import {
   Form,
   FormControl,
@@ -30,12 +32,21 @@ type OtpFormValues = z.infer<typeof otpFormSchema>;
 export const OtpVerificationForm = () => {
   const router = useRouter();
   const { verifyOtp, resendOtp, isAuthLoading, clearError, currentEmail, isSignup } = useAuth();
+  const { setUserFromAuth } = useUser();
   const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(false);
+  const [showAcceptInvitation, setShowAcceptInvitation] = useState(false);
+  const [verifiedOrgId, setVerifiedOrgId] = useState<string | null>(null);
 
-  // Get invite code from URL
-  const inviteCode = router.query.inviteCode as string | undefined;
-  const hasInviteCode = !!inviteCode;
+  // Get orgId and invite from URL
+  const orgId = router.query.orgId as string | undefined;
+
+  // Store orgId in localStorage when component loads
+  useEffect(() => {
+    if (orgId) {
+      localStorage.setItem('kudos_invite_orgId', orgId);
+    }
+  }, [orgId]);
 
   const form = useForm<OtpFormValues>({
     resolver: zodResolver(otpFormSchema),
@@ -66,45 +77,39 @@ export const OtpVerificationForm = () => {
   const onSubmit = async (values: OtpFormValues) => {
     clearError();
     try {
-      console.log('Verifying OTP...');
       const result = await verifyOtp(currentEmail, values.otp);
 
       if (result.success) {
-        console.log('OTP verification successful');
-        toastService.success('Verification Successful', 'Redirecting...');
+        toastService.success('Verification Successful - Redirecting...');
+
+        // Set user in UserContext if user data is present
+        if (result.user) {
+          setUserFromAuth(result.user);
+        }
 
         // Store userId in localStorage if available
         if (result.user?.id) {
           localStorage.setItem('kudos_user_id', result.user.id);
         }
 
-        // Add a short delay to ensure auth state is updated
-        // and toast is displayed before navigation
-        setTimeout(() => {
-          if (isSignup) {
-            // For new user signups, check if they have an invite code
-            if (hasInviteCode && inviteCode) {
-              console.log('Invite code found, navigating to dashboard with invite code...');
-              router.push(`/dashboard?inviteCode=${inviteCode}`);
-            } else {
-              // No invite code - redirect to organization creation page
-              console.log('No invite code found, navigating to organization creation...');
-              router.push('/organization');
-            }
-          } else {
-            // For existing users (login flow), go straight to dashboard
-            console.log('Login flow, navigating to dashboard...');
-            router.push('/dashboard');
-          }
-        }, 1000);
+        // Navigation logic
+        if (orgId) {
+          // If we have an orgId, show the invitation acceptance screen
+          setVerifiedOrgId(orgId);
+          setShowAcceptInvitation(true);
+        } else if (isSignup) {
+          // New user - redirect to organization creation
+          window.location.href = '/organization';
+        } else {
+          // Existing user - redirect to organization selection
+          window.location.href = '/organizations';
+        }
       } else {
-        console.log('OTP verification failed:', result.message);
-        toastService.error('Verification Failed', result.message);
+        toastService.error(`Verification Failed: ${result.message}`);
       }
     } catch (err: any) {
       const errorMessage = err.message || 'An unexpected error occurred';
-      console.error('OTP verification error:', err);
-      toastService.error('Verification Error', errorMessage);
+      toastService.error(`Verification Error: ${errorMessage}`);
     }
   };
 
@@ -118,9 +123,9 @@ export const OtpVerificationForm = () => {
       const result = await resendOtp(currentEmail);
 
       if (!result.success) {
-        toastService.error('Resend Failed', result.message);
+        toastService.error(`Resend Failed: ${result.message}`);
       } else {
-        toastService.success('OTP Resent', 'A new OTP has been sent to your email');
+        toastService.success('A new OTP has been sent to your email');
         if (result.cooldownSeconds) {
           setCooldownTime(result.cooldownSeconds);
         } else {
@@ -129,11 +134,40 @@ export const OtpVerificationForm = () => {
         }
       }
     } catch (err: any) {
-      const errorMessage = err.message || 'Failed to resend OTP';
-      toastService.error('Resend Error', errorMessage);
+      const errorMessage = err.message || 'An unexpected error occurred';
+      toastService.error(`Resend Error: ${errorMessage}`);
       setCanResend(true);
     }
   };
+
+  const handleInvitationSuccess = (orgId: string) => {
+    // Redirect to dashboard with the orgId parameter after successful acceptance
+    window.location.href = `/dashboard?orgId=${orgId}`;
+
+    // Clean up localStorage
+    localStorage.removeItem('kudos_invite_orgId');
+  };
+
+  const handleInvitationError = () => {
+    // If invitation acceptance fails, go back to regular navigation
+    if (isSignup) {
+      window.location.href = '/organization';
+    } else {
+      window.location.href = '/organizations';
+    }
+  };
+
+  if (showAcceptInvitation && verifiedOrgId) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <AcceptInvitation
+          organizationId={verifiedOrgId}
+          onSuccess={handleInvitationSuccess}
+          onError={handleInvitationError}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">

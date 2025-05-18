@@ -10,6 +10,8 @@ import {
   ChevronRight,
   BarChart,
   MessageCircle,
+  Tag,
+  UserPlus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/shared/components/atoms/Button';
@@ -31,6 +33,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
   const [collapsed, setCollapsed] = useState(true);
   const router = useRouter();
 
+  // Extract query parameters to preserve them across routes
+  const { query } = router;
+  const queryParams = { ...query };
+  // Remove pathname-specific parameters if needed
+  delete queryParams.slug;
+
   const toggleSidebar = () => {
     if (isMobile && onClose) {
       // Call the onClose prop when in mobile mode
@@ -43,15 +51,33 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
 
   const sidebarItems = [
     { icon: Home, label: 'User Management', href: '/user-management' },
-    { icon: Award, label: 'Kudos', href: '/dashboard/kudos' },
-    { icon: MessageCircle, label: 'Messages', href: '/dashboard/messages' },
-    { icon: Users, label: 'Team', href: '/dashboard/team' },
-    { icon: BarChart, label: 'Analytics', href: '/dashboard/analytics' },
-    { icon: Settings, label: 'Settings', href: '/dashboard/settings' },
+    { icon: Tag, label: 'Kudo Categories', href: '/kudo-categories' },
+    { icon: Users, label: 'Teams', href: '/teams' },
+    { icon: BarChart, label: 'Analytics', href: '/analytics' },
   ];
 
   // On mobile, we don't collapse - we just show the full sidebar
   const effectiveCollapsed = isMobile ? false : collapsed;
+
+  // Helper function to build href with query parameters
+  const buildHref = (baseHref: string) => {
+    // If there are no query parameters, return the base URL
+    if (Object.keys(queryParams).length === 0) {
+      return baseHref;
+    }
+
+    // Build the query string
+    const queryString = new URLSearchParams();
+    Object.entries(queryParams).forEach(([key, value]) => {
+      if (Array.isArray(value)) {
+        value.forEach(val => queryString.append(key, val));
+      } else if (value !== undefined) {
+        queryString.append(key, value as string);
+      }
+    });
+
+    return `${baseHref}?${queryString.toString()}`;
+  };
 
   return (
     <aside
@@ -65,7 +91,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
     >
       {/* Logo */}
       <div className="flex items-center justify-between py-5 px-4 border-b">
-        <div className="flex-shrink-0 flex items-center">
+        <Link
+          href={buildHref('/dashboard')}
+          className="flex-shrink-0 flex items-center cursor-pointer"
+        >
           {/* App Logo */}
           <div className="h-8 w-8 rounded-md bg-blue-600 text-white flex items-center justify-center font-bold text-lg">
             K
@@ -73,7 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
 
           {/* App Name - Only show when not collapsed */}
           {!effectiveCollapsed && <span className="ml-3 font-semibold text-xl">Kudos</span>}
-        </div>
+        </Link>
 
         {/* Only show close button on mobile */}
         {isMobile && (
@@ -113,6 +142,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
       <ScrollArea className="flex-1">
         <nav className="py-4 px-2 space-y-1">
           {sidebarItems.map(item => {
+            const hrefWithQuery = buildHref(item.href);
             const isActive =
               router.pathname === item.href || router.pathname.startsWith(`${item.href}/`);
 
@@ -121,7 +151,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Link
-                      href={item.href}
+                      href={hrefWithQuery}
                       className={cn(
                         'flex items-center rounded-md transition-colors my-1',
                         effectiveCollapsed ? 'justify-center h-10 w-10 mx-auto' : 'py-2 px-3',

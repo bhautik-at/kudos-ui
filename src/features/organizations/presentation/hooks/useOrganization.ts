@@ -39,8 +39,7 @@ export function useOrganization(id?: string) {
       setError(error);
 
       toast({
-        title: 'Error',
-        description: `Failed to fetch organization: ${error.message}`,
+        title: `Error - Failed to fetch organization: ${error.message}`,
         type: 'error',
       });
     } finally {
@@ -66,8 +65,7 @@ export function useOrganization(id?: string) {
       setOrganization(result);
 
       toast({
-        title: 'Success',
-        description: 'Organization updated successfully',
+        title: 'Success - Organization updated successfully',
       });
 
       return result;
@@ -76,8 +74,7 @@ export function useOrganization(id?: string) {
       setError(error);
 
       toast({
-        title: 'Error',
-        description: `Failed to update organization: ${error.message}`,
+        title: `Error - Failed to update organization: ${error.message}`,
         type: 'error',
       });
 
@@ -98,8 +95,7 @@ export function useOrganization(id?: string) {
       await useCase.execute(id);
 
       toast({
-        title: 'Success',
-        description: 'Organization deleted successfully',
+        title: 'Success - Organization deleted successfully',
       });
 
       // Redirect to organizations list page
@@ -110,8 +106,7 @@ export function useOrganization(id?: string) {
       setError(error);
 
       toast({
-        title: 'Error',
-        description: `Failed to delete organization: ${error.message}`,
+        title: `Error - Failed to delete organization: ${error.message}`,
         type: 'error',
       });
 

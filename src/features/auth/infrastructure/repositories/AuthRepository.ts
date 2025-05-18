@@ -49,7 +49,18 @@ export class AuthRepository implements IAuthRepository {
   async verifyOtp(
     email: string,
     otp: string
-  ): Promise<{ success: boolean; message: string; token?: string; user?: any }> {
+  ): Promise<{
+    success: boolean;
+    message: string;
+    token?: string;
+    user?: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+    };
+  }> {
     try {
       const response = await this.authApiClient.verifyOtp(email, otp);
 
@@ -92,7 +103,18 @@ export class AuthRepository implements IAuthRepository {
     }
   }
 
-  async refreshToken(): Promise<{ success: boolean; message: string; token?: string; user?: any }> {
+  async refreshToken(): Promise<{
+    success: boolean;
+    message: string;
+    token?: string;
+    user?: {
+      id: string;
+      email: string;
+      firstName: string;
+      lastName: string;
+      role: string;
+    };
+  }> {
     try {
       const response = await this.authApiClient.refreshToken();
 

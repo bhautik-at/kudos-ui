@@ -1,7 +1,7 @@
 'use client';
 
 import { useToast as useShadcnToast, toast as shadcnToast } from '@/components/hooks/use-toast';
-import type { ToastActionElement, ToastProps } from '@/components/ui/toast';
+import type { ToastActionElement } from '@/components/ui/toast';
 import { ToastVariant } from '@/shared/components/atoms/toast';
 import {
   IToastService,
@@ -24,22 +24,14 @@ export function useToast(): IToastService {
   const toast = ({
     type = 'default',
     title,
-    description,
     action,
     options,
   }: {
     type?: ToastType;
     title?: string;
-    description: string;
     action?: ToastActionElement;
     options?: ToastOptions;
   }) => {
-    // If description is empty and title exists, swap them for better UX
-    if (!description && title) {
-      description = title;
-      title = undefined;
-    }
-
     // We'll pass the original type as a className and extend options
     // but we'll map it to a shadcn-supported variant for the underlying component
     const toastOptions = {
@@ -52,45 +44,40 @@ export function useToast(): IToastService {
 
     return shadcnToast({
       title,
-      description: description || 'Something happened',
       action,
       duration: options?.duration || 5000,
       ...toastOptions,
     });
   };
 
-  const success = (message: string, description?: string, options?: ToastOptions) => {
+  const success = (title: string, options?: ToastOptions) => {
     return toast({
       type: 'success',
-      title: message,
-      description: description || '',
+      title,
       options,
     });
   };
 
-  const error = (message: string, description?: string, options?: ToastOptions) => {
+  const error = (title: string, options?: ToastOptions) => {
     return toast({
       type: 'error', // Use 'error' for our component
-      title: description ? message : undefined,
-      description: description || message,
+      title,
       options: { ...options, duration: options?.duration || 7000 }, // Error messages stay longer
     });
   };
 
-  const info = (message: string, description?: string, options?: ToastOptions) => {
+  const info = (title: string, options?: ToastOptions) => {
     return toast({
       type: 'info',
-      title: message,
-      description: description || '',
+      title,
       options,
     });
   };
 
-  const warning = (message: string, description?: string, options?: ToastOptions) => {
+  const warning = (title: string, options?: ToastOptions) => {
     return toast({
       type: 'warning',
-      title: message,
-      description: description || '',
+      title,
       options,
     });
   };

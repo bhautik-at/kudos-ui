@@ -10,7 +10,13 @@ interface VerifyOtpResponse {
   success: boolean;
   message: string;
   token?: string;
-  user?: any;
+  user?: {
+    id: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  };
 }
 
 interface ResendOtpResponse {
@@ -100,13 +106,13 @@ export class AuthApiClient {
       const response = await httpService.post<VerifyOtpResponse>(
         `${this.baseUrl}/refresh-token`,
         {},
-        { 
+        {
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-          }
+            Accept: 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+          },
         }
       );
 
