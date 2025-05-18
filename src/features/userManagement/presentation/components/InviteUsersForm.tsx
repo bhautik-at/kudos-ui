@@ -27,6 +27,7 @@ type InviteUsersFormValues = z.infer<typeof inviteUsersSchema>;
 export const InviteUsersForm: React.FC = () => {
   const { isLoading, inviteUsers } = useUserManagement();
   const [emails, setEmails] = useState<string[]>([]);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const form = useForm<InviteUsersFormValues>({
     resolver: zodResolver(inviteUsersSchema),
@@ -45,16 +46,28 @@ export const InviteUsersForm: React.FC = () => {
     if (trimmedEmail && isValidEmail(trimmedEmail) && !emails.includes(trimmedEmail)) {
       setEmails([...emails, trimmedEmail]);
       form.reset({ email: '' });
+      // Clear any existing error message when an email is successfully added
+      setErrorMessage(null);
+      form.clearErrors('email');
     } else if (trimmedEmail && !isValidEmail(trimmedEmail)) {
       form.setError('email', {
         type: 'manual',
         message: 'Please enter a valid email address',
+      });
+    } else if (trimmedEmail && emails.includes(trimmedEmail)) {
+      form.setError('email', {
+        type: 'manual',
+        message: 'This email has already been added',
       });
     }
   };
 
   const removeEmail = (email: string) => {
     setEmails(emails.filter(e => e !== email));
+    // If all emails are removed, show the error message again
+    if (emails.length <= 1) {
+      setErrorMessage('Please add at least one email address');
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -66,24 +79,32 @@ export const InviteUsersForm: React.FC = () => {
   };
 
   const onSubmit = async (data: InviteUsersFormValues) => {
+    // First clear any existing error message
+    setErrorMessage(null);
+
     // Add the current email if valid
+    let updatedEmails = [...emails];
     if (data.email) {
-      addEmail(data.email);
+      const trimmedEmail = data.email.trim();
+      if (isValidEmail(trimmedEmail) && !emails.includes(trimmedEmail)) {
+        updatedEmails = [...emails, trimmedEmail];
+        setEmails(updatedEmails);
+        form.reset({ email: '' });
+      }
     }
 
-    if (emails.length === 0) {
-      form.setError('email', {
-        type: 'manual',
-        message: 'Please add at least one email address',
-      });
+    // Check if we have any emails to send
+    if (updatedEmails.length === 0) {
+      setErrorMessage('Please add at least one email address');
       return;
     }
 
     try {
-      await inviteUsers(emails);
-      toastService.success(`Successfully invited ${emails.length} users`);
+      await inviteUsers(updatedEmails);
+      toastService.success(`Successfully invited ${updatedEmails.length} users`);
       setEmails([]);
       form.reset();
+      setErrorMessage(null);
     } catch (error) {
       toastService.error(
         `Failed to invite users: ${error instanceof Error ? error.message : 'An unexpected error occurred'}`
@@ -113,6 +134,9 @@ export const InviteUsersForm: React.FC = () => {
                 Enter email addresses and press Enter to add them
               </FormDescription>
               <FormMessage className="text-sm text-red-500" />
+              {errorMessage && !form.formState.errors.email && (
+                <p className="text-sm text-red-500 mt-1">{errorMessage}</p>
+              )}
             </FormItem>
           )}
         />
@@ -121,7 +145,7 @@ export const InviteUsersForm: React.FC = () => {
         {emails.length > 0 && (
           <div className="rounded-lg bg-gray-50 dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-800">
             <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wider">
-              {emails.length} {emails.length === 1 ? 'Email' : 'Emails'} Added
+              {emails.length} {emails.length === 1 ? 'EMAIL ADDED' : 'EMAILS ADDED'}
             </p>
             <div className="flex flex-wrap gap-2 mt-2">
               {emails.map(email => (
