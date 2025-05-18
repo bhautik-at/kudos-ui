@@ -93,51 +93,71 @@ export const InviteUsersForm: React.FC = () => {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Addresses</FormLabel>
+              <FormLabel className="text-base font-medium">Email Addresses</FormLabel>
               <FormControl>
                 <Input
                   placeholder="Enter email address and press Enter"
+                  className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   {...field}
                   onKeyDown={handleKeyDown}
                   disabled={isLoading}
                 />
               </FormControl>
-              <FormDescription>Enter email addresses and press Enter to add them</FormDescription>
-              <FormMessage />
+              <FormDescription className="text-xs text-gray-500">
+                Enter email addresses and press Enter to add them
+              </FormDescription>
+              <FormMessage className="text-sm text-red-500" />
             </FormItem>
           )}
         />
 
         {/* Email tags */}
         {emails.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {emails.map(email => (
-              <div
-                key={email}
-                className="flex items-center gap-1 px-2 py-1 text-sm bg-blue-100 text-blue-800 rounded-full"
-              >
-                <span>{email}</span>
-                <button
-                  type="button"
-                  className="text-blue-600 hover:text-blue-800"
-                  onClick={() => removeEmail(email)}
+          <div className="rounded-lg bg-gray-50 dark:bg-gray-900 p-4 border border-gray-200 dark:border-gray-800">
+            <p className="text-xs text-gray-500 mb-3 font-medium uppercase tracking-wider">
+              {emails.length} {emails.length === 1 ? 'Email' : 'Emails'} Added
+            </p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {emails.map(email => (
+                <div
+                  key={email}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-gradient-to-r from-blue-500/10 to-purple-500/10 text-gray-800 dark:text-gray-100 rounded-full border border-blue-100 dark:border-purple-900/20 transition-colors hover:from-blue-500/20 hover:to-purple-500/20"
                 >
-                  <X size={14} />
-                </button>
-              </div>
-            ))}
+                  <span className="font-medium">{email}</span>
+                  <button
+                    type="button"
+                    className="ml-1 text-gray-500 hover:text-red-500 rounded-full h-5 w-5 flex items-center justify-center transition-colors"
+                    onClick={() => removeEmail(email)}
+                    aria-label={`Remove ${email}`}
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
-        <div className="flex justify-end mt-4">
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Inviting...' : 'Invite Users'}
+        <div className="pt-2">
+          <Button
+            type="submit"
+            disabled={isLoading}
+            className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md transition-all font-medium"
+          >
+            {isLoading ? (
+              <span className="flex items-center gap-2">
+                <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                Sending Invitations...
+              </span>
+            ) : (
+              'Invite Users'
+            )}
           </Button>
         </div>
       </form>

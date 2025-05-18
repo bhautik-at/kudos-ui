@@ -8,7 +8,7 @@ export const KudoCategoriesTemplate: React.FC = () => {
   return (
     <DashboardLayout>
       <KudoCategoriesProvider>
-        <div className="container mx-auto py-4">
+        <div className="container mx-auto py-6 px-4 max-w-7xl">
           <KudoCategoriesHeader />
           <CategoryTable />
         </div>

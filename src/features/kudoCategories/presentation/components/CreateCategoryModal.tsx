@@ -12,6 +12,7 @@ import { Input } from '@/shared/components/atoms/Input';
 import { Label } from '@/shared/components/atoms/Label';
 import { useKudoCategoriesContext } from '../contexts/KudoCategoriesContext';
 import { useToast } from '@/shared/hooks/use-toast';
+import { Tag, AlertCircle } from 'lucide-react';
 
 interface CreateCategoryModalProps {
   isOpen: boolean;
@@ -62,35 +63,70 @@ export const CreateCategoryModal: React.FC<CreateCategoryModalProps> = ({ isOpen
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Add New Category</DialogTitle>
-          <DialogDescription>
-            Create a new kudo category that can be assigned to kudos.
-          </DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <div className="py-4 space-y-4">
+      <DialogContent className="sm:max-w-[500px] p-0 overflow-hidden rounded-xl border-0">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
+          <div className="flex items-center space-x-3">
+            <div className="rounded-full bg-white/20 p-2">
+              <Tag className="h-6 w-6" />
+            </div>
+            <DialogHeader className="text-white">
+              <DialogTitle className="text-2xl font-bold text-white">Add New Category</DialogTitle>
+              <DialogDescription className="text-white/80 mt-1">
+                Create a new kudo category that can be assigned to kudos.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+              <Label htmlFor="name" className="text-base font-medium">
+                Category Name
+              </Label>
               <Input
                 id="name"
                 value={categoryName}
                 onChange={e => setCategoryName(e.target.value)}
                 disabled={isSubmitting}
                 placeholder="Enter category name"
+                className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
-            {error && <div className="text-destructive text-sm">{error}</div>}
+
+            {error && (
+              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-3 flex items-start space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+                <div className="text-red-600 dark:text-red-400 text-sm">{error}</div>
+              </div>
+            )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" type="button" onClick={handleClose} disabled={isSubmitting}>
+
+          <div className="flex justify-end space-x-3 mt-6">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={handleClose}
+              disabled={isSubmitting}
+              className="border-gray-300 text-gray-700 hover:bg-gray-50"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Creating...' : 'Create'}
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-md transition-all"
+            >
+              {isSubmitting ? (
+                <span className="flex items-center gap-2">
+                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  Creating...
+                </span>
+              ) : (
+                'Create Category'
+              )}
             </Button>
-          </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>

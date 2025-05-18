@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/shared/components/atoms/Select';
-import { ArrowUpDown, Trash2, Lock } from 'lucide-react';
+import { ArrowUpDown, Trash2, Lock, Users } from 'lucide-react';
 import { Button } from '@/shared/components/atoms/Button';
 import {
   Pagination,
@@ -129,156 +129,192 @@ export const UserTable: React.FC = () => {
 
   return (
     <div className="space-y-4">
-      {/* Table wrapper with horizontal scrolling on mobile */}
-      <div className="overflow-x-auto -mx-4 px-4 sm:mx-0 sm:px-0">
-        <div className="inline-block min-w-full align-middle">
-          <Table className="border rounded-md min-w-full">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[180px] md:w-[250px]">
-                  <Button
-                    variant="ghost"
-                    onClick={handleToggleSortDirection}
-                    className="flex items-center space-x-1"
+      <div className="bg-white dark:bg-gray-850 overflow-hidden rounded-xl border shadow-sm">
+        {/* Table wrapper with horizontal scrolling on mobile */}
+        <div className="overflow-x-auto">
+          <div className="inline-block min-w-full align-middle">
+            <Table className="min-w-full">
+              <TableHeader className="bg-gray-50 dark:bg-gray-800/40">
+                <TableRow>
+                  <TableHead className="w-[180px] md:w-[250px]">
+                    <Button
+                      variant="ghost"
+                      onClick={handleToggleSortDirection}
+                      className="flex items-center space-x-1 font-medium"
+                    >
+                      <span>Name</span>
+                      <ArrowUpDown className="h-4 w-4" />
+                    </Button>
+                  </TableHead>
+                  <TableHead className="w-[200px] font-medium">Email</TableHead>
+                  <TableHead className="w-[100px] font-medium">Team</TableHead>
+                  <TableHead className="w-[180px] font-medium">Role</TableHead>
+                  <TableHead className="w-[80px] font-medium text-right pr-4">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {isLoading && (
+                  <>
+                    {[...Array(5)].map((_, index) => (
+                      <TableRow key={index} className="animate-pulse">
+                        <TableCell>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-full"></div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </>
+                )}
+                {!isLoading && users.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12">
+                      <div className="flex flex-col items-center justify-center text-muted-foreground">
+                        <Users className="h-12 w-12 mb-2 opacity-30" />
+                        <p className="text-lg">No users found</p>
+                        <p className="text-sm">Invite team members to get started</p>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )}
+                {users.map(user => (
+                  <TableRow
+                    key={user.id}
+                    className="transition-colors hover:bg-gray-50 dark:hover:bg-gray-800/50"
                   >
-                    <span>Name</span>
-                    <ArrowUpDown className="h-4 w-4" />
-                  </Button>
-                </TableHead>
-                <TableHead className="w-[200px]">Email</TableHead>
-                <TableHead className="w-[100px]">Team</TableHead>
-                <TableHead className="w-[180px]">Role</TableHead>
-                <TableHead className="w-[80px]">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    Loading users...
-                  </TableCell>
-                </TableRow>
-              )}
-              {!isLoading && users.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    No users found
-                  </TableCell>
-                </TableRow>
-              )}
-              {users.map(user => (
-                <TableRow key={user.id}>
-                  <TableCell className="whitespace-nowrap">{user.fullName}</TableCell>
-                  <TableCell className="whitespace-nowrap">{user.email}</TableCell>
-                  <TableCell className="whitespace-nowrap">{user.teamName || '-'}</TableCell>
-                  <TableCell>
-                    {role === UserRole.TechLeader ? (
-                      <Select
-                        value={user.role}
-                        onValueChange={value => handleRoleChange(user.id, value as UserRole)}
-                        disabled={isLoading}
-                      >
-                        <SelectTrigger className="w-[140px] md:w-[180px]">
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value={UserRole.Member}>Member</SelectItem>
-                          <SelectItem value={UserRole.TechLeader}>Tech Leader</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="flex items-center text-sm text-muted-foreground">
-                              <span className="mr-2">
-                                {user.role === UserRole.Member ? 'Member' : 'Tech Leader'}
-                              </span>
-                              <Lock className="h-3.5 w-3.5" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>You don't have permission to change roles</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {role === UserRole.TechLeader ? (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => setUserToDelete(user.id)}
-                        disabled={isLoading}
-                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete user</span>
-                      </Button>
-                    ) : (
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <div className="h-9 w-9 flex items-center justify-center text-muted-foreground">
-                              <Lock className="h-4 w-4" />
-                            </div>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>You don't have permission to delete users</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                    <TableCell className="font-medium whitespace-nowrap">{user.fullName}</TableCell>
+                    <TableCell className="whitespace-nowrap">{user.email}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      {user.teamName ? (
+                        <span className="inline-flex items-center rounded-full bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                          {user.teamName}
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">
+                          No team
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {role === UserRole.TechLeader ? (
+                        <Select
+                          value={user.role}
+                          onValueChange={value => handleRoleChange(user.id, value as UserRole)}
+                          disabled={isLoading}
+                        >
+                          <SelectTrigger className="w-[140px] md:w-[180px] bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={UserRole.Member}>Member</SelectItem>
+                            <SelectItem value={UserRole.TechLeader}>Tech Leader</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="flex items-center">
+                                <span
+                                  className={`inline-flex items-center rounded-full px-2 py-1 text-xs font-medium ${
+                                    user.role === UserRole.TechLeader
+                                      ? 'bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10'
+                                      : 'bg-green-50 text-green-700 ring-1 ring-inset ring-green-700/10'
+                                  }`}
+                                >
+                                  {user.role === UserRole.Member ? 'Member' : 'Tech Leader'}
+                                </span>
+                                <Lock className="h-3.5 w-3.5 ml-2 text-muted-foreground" />
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Only Tech Leaders can change roles</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {role === UserRole.TechLeader && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-full text-red-500 hover:bg-red-50 hover:text-red-600"
+                                onClick={() => setUserToDelete(user.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Delete User</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center mt-4">
-          <Pagination>
-            <PaginationContent>
-              {[...Array(totalPages)].map((_, index) => {
-                const page = index + 1;
-                return (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      onClick={() => handlePageChange(page)}
-                      isActive={currentPage === page}
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-            </PaginationContent>
-          </Pagination>
-        </div>
+        <Pagination className="mt-4">
+          <PaginationContent>
+            {[...Array(totalPages)].map((_, index) => (
+              <PaginationItem key={index}>
+                <PaginationLink
+                  onClick={() => handlePageChange(index + 1)}
+                  isActive={currentPage === index + 1}
+                  className={
+                    currentPage === index + 1
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white'
+                      : ''
+                  }
+                >
+                  {index + 1}
+                </PaginationLink>
+              </PaginationItem>
+            ))}
+          </PaginationContent>
+        </Pagination>
       )}
 
-      {/* Delete confirmation dialog */}
-      <Dialog open={!!userToDelete} onOpenChange={(isOpen: boolean) => !isOpen && closeDialog()}>
-        <DialogContent>
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={userToDelete !== null} onOpenChange={closeDialog}>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirm Deletion</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-xl">Confirm Deletion</DialogTitle>
+            <DialogDescription className="text-muted-foreground pt-2">
               Are you sure you want to delete this user? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="mt-6 flex space-x-2 justify-end">
             <Button variant="outline" onClick={closeDialog}>
               Cancel
             </Button>
             <Button
               variant="destructive"
+              className="bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800"
               onClick={handleDeleteUser}
-              className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              Delete User
             </Button>
           </DialogFooter>
         </DialogContent>
