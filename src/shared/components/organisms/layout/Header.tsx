@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, LogOut, Menu, Check, ChevronDown } from 'lucide-react';
+import { Search, LogOut, Menu, Check, ChevronDown, Plus } from 'lucide-react';
 import { useAuth } from '@/features/auth/presentation/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/shared/components/atoms/Button';
@@ -15,6 +15,9 @@ import { toastService } from '@/shared/services/toast';
 import { useRouter } from 'next/router';
 import { httpService } from '@/shared/services/http/HttpService';
 import { useOrganizations } from '@/features/organizations/presentation/hooks/useOrganizations';
+import { useCreateOrganization } from '@/features/organizations/presentation/hooks/useCreateOrganization';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/shared/components/atoms/Dialog';
+import { OrganizationForm } from '@/features/organizations/presentation/components/OrganizationForm';
 
 interface HeaderProps {
   className?: string;
@@ -36,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   const [showOrgDropdown, setShowOrgDropdown] = useState(false);
   const [orgSearchValue, setOrgSearchValue] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [showNewOrgModal, setShowNewOrgModal] = useState(false);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const orgDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -43,7 +47,14 @@ export const Header: React.FC<HeaderProps> = ({
   const orgId = router.query.orgId as string;
 
   // Fetch organizations list
-  const { organizations, isLoading } = useOrganizations();
+  const { organizations, isLoading, refreshOrganizations } = useOrganizations();
+
+  // Use organization creation hook
+  const {
+    createOrganization,
+    isLoading: isCreatingOrg,
+    error: createOrgError,
+  } = useCreateOrganization();
 
   // Find current organization in the list
   const currentOrganization = orgId ? organizations.find(org => org.id === orgId) : null;
@@ -69,10 +80,14 @@ export const Header: React.FC<HeaderProps> = ({
     };
   }, []);
 
-  // Filter organizations based on search
-  const filteredOrganizations = organizations.filter(org =>
-    org.name.toLowerCase().includes(orgSearchValue.toLowerCase())
-  );
+  // Filter organizations based on search and removing duplicates by ID
+  const filteredOrganizations = organizations
+    .filter(org => org.name.toLowerCase().includes(orgSearchValue.toLowerCase()))
+    // Use a Set to track seen IDs and filter out duplicates
+    .filter((org, index, self) => {
+      const firstIndex = self.findIndex(o => o.id === org.id);
+      return firstIndex === index; // Keep only the first occurrence of each ID
+    });
 
   // Handle organization selection
   const selectOrganization = (org: { id: string; name: string }) => {
@@ -87,6 +102,19 @@ export const Header: React.FC<HeaderProps> = ({
     // Close the dropdown
     setShowOrgDropdown(false);
     setOrgSearchValue('');
+  };
+
+  // Handle new organization form submission
+  const handleCreateOrganization = async (data: { name: string; description?: string }) => {
+    const result = await createOrganization(data.name, data.description);
+
+    if (result) {
+      // Refresh organizations to include the new one
+      await refreshOrganizations();
+
+      // Close the modal
+      setShowNewOrgModal(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -220,6 +248,20 @@ export const Header: React.FC<HeaderProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Create New Organization option */}
+              <div className="border-t border-slate-200 p-2">
+                <button
+                  className="flex items-center w-full px-3 py-2 text-sm text-left rounded-md hover:bg-blue-50 text-blue-600 font-medium transition-colors"
+                  onClick={() => {
+                    setShowOrgDropdown(false);
+                    setShowNewOrgModal(true);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  <span>New Organization</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
@@ -258,6 +300,22 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         )}
       </div>
+
+      {/* New Organization Modal */}
+      <Dialog open={showNewOrgModal} onOpenChange={setShowNewOrgModal}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Create New Organization</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <OrganizationForm
+              onSubmit={handleCreateOrganization}
+              isLoading={isCreatingOrg}
+              error={createOrgError}
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </header>
   );
 };

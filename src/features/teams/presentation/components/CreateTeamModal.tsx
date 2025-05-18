@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -19,7 +19,7 @@ import {
   UserManagementProvider,
   useUserManagement,
 } from '@/features/userManagement/presentation/contexts/UserManagementContext';
-import { Users, AlertCircle, UserPlus } from 'lucide-react';
+import { Users, AlertCircle, UserPlus, Loader2 } from 'lucide-react';
 
 const formSchema = z.object({
   name: z.string().min(2, 'Team name must be at least 2 characters'),
@@ -47,6 +47,8 @@ export function CreateTeamModalContent({
   const [serverError, setServerError] = useState<string | null>(null);
   const { users, isLoading: isLoadingUsers } = useUserManagement();
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const [processingMembers, setProcessingMembers] = useState<Record<string, boolean>>({});
+  const [teamCreated, setTeamCreated] = useState(false);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -54,6 +56,13 @@ export function CreateTeamModalContent({
       name: '',
     },
   });
+
+  const handleClose = useCallback(() => {
+    if (teamCreated) {
+      onTeamCreated();
+    }
+    onClose();
+  }, [teamCreated, onTeamCreated, onClose]);
 
   const handleSubmit = async (data: FormValues) => {
     setServerError(null);
@@ -69,21 +78,42 @@ export function CreateTeamModalContent({
       toast({
         title: 'Team created successfully',
       });
-      onTeamCreated();
+      setTeamCreated(true);
       onClose();
+      onTeamCreated();
     } else {
       setServerError(error?.message || 'Failed to create team');
     }
   };
 
-  const toggleMember = (userId: string) => {
-    setSelectedMembers(prev =>
-      prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId]
-    );
+  const toggleMember = async (userId: string) => {
+    // Set this member as processing
+    setProcessingMembers(prev => ({ ...prev, [userId]: true }));
+
+    try {
+      // Toggle the selection state
+      setSelectedMembers(prev => {
+        if (prev.includes(userId)) {
+          // If user is already selected, remove them
+          return prev.filter(id => id !== userId);
+        } else {
+          // Otherwise add them
+          return [...prev, userId];
+        }
+      });
+
+      // Simulate an API delay for consistent UX with EditTeamModal
+      await new Promise(resolve => setTimeout(resolve, 150));
+    } catch (err) {
+      console.error('Error toggling member selection:', err);
+    } finally {
+      // Clear processing state
+      setProcessingMembers(prev => ({ ...prev, [userId]: false }));
+    }
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[600px] p-0 overflow-hidden rounded-xl border-0">
         <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 text-white">
           <div className="flex items-center space-x-3">
@@ -139,31 +169,44 @@ export function CreateTeamModalContent({
                     </div>
                   ) : (
                     <div className="space-y-1 p-2">
-                      {users.map(user => (
-                        <div
-                          key={user.id}
-                          className={`flex items-center space-x-3 p-2 rounded-md transition-colors ${
-                            selectedMembers.includes(user.id)
-                              ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100'
-                              : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
-                          }`}
-                        >
-                          <Checkbox
-                            id={`user-${user.id}`}
-                            checked={selectedMembers.includes(user.id)}
-                            onCheckedChange={() => toggleMember(user.id)}
-                            className={selectedMembers.includes(user.id) ? 'text-blue-600' : ''}
-                          />
-                          <div className="flex items-center justify-between flex-1 min-w-0">
-                            <Label htmlFor={`user-${user.id}`} className="text-sm cursor-pointer">
-                              {user.fullName || `${user.firstName} ${user.lastName}`}
-                            </Label>
-                            <span className="text-xs text-gray-500 truncate ml-2">
-                              {user.email}
-                            </span>
+                      {users.map(user => {
+                        const isSelected = selectedMembers.includes(user.id);
+                        const isProcessing = processingMembers[user.id];
+
+                        return (
+                          <div
+                            key={user.id}
+                            className={`flex items-center space-x-3 p-2 rounded-md transition-colors ${
+                              isSelected
+                                ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-900 dark:text-blue-100'
+                                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                            }`}
+                          >
+                            <div className="relative">
+                              <Checkbox
+                                id={`user-${user.id}`}
+                                checked={isSelected}
+                                onCheckedChange={() => toggleMember(user.id)}
+                                disabled={isProcessing}
+                                className={isSelected ? 'text-blue-600' : ''}
+                              />
+                              {isProcessing && (
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between flex-1 min-w-0">
+                              <Label htmlFor={`user-${user.id}`} className="text-sm cursor-pointer">
+                                {user.fullName || `${user.firstName} ${user.lastName}`}
+                              </Label>
+                              <span className="text-xs text-gray-500 truncate ml-2">
+                                {user.email}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -182,7 +225,7 @@ export function CreateTeamModalContent({
             <Button
               type="button"
               variant="outline"
-              onClick={onClose}
+              onClick={handleClose}
               disabled={isCreating}
               className="border-gray-300 text-gray-700 hover:bg-gray-50"
             >
@@ -195,7 +238,7 @@ export function CreateTeamModalContent({
             >
               {isCreating ? (
                 <span className="flex items-center gap-2">
-                  <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <Loader2 className="h-4 w-4 animate-spin" />
                   Creating...
                 </span>
               ) : (

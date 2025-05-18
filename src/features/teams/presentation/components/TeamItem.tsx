@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TeamOutputDto } from '../../application/dtos/TeamOutputDto';
 import { TeamMemberWithUserInfoOutputDto } from '../../application/dtos/TeamMemberOutputDto';
 import { useUserRole } from '@/shared/hooks/useUserRole';
@@ -23,6 +23,7 @@ export function TeamItem({ team, onTeamUpdated }: TeamItemProps) {
   const [showMembers, setShowMembers] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   // Check if members property exists and contains array of objects (not strings)
   const hasMembers =
@@ -32,7 +33,7 @@ export function TeamItem({ team, onTeamUpdated }: TeamItemProps) {
     typeof team.members[0] !== 'string';
 
   // Fetch team members if not provided
-  const { teamMembers, isLoading } = useTeamMembers(team.id, !hasMembers);
+  const { teamMembers, isLoading, refetchMembers } = useTeamMembers(team.id, !hasMembers);
 
   // Use the provided members if they're objects, otherwise use fetched members
   const displayMembers = hasMembers
@@ -42,6 +43,23 @@ export function TeamItem({ team, onTeamUpdated }: TeamItemProps) {
   const toggleMembers = () => {
     setShowMembers(!showMembers);
   };
+
+  // Handle team updates including member changes
+  const handleTeamUpdated = () => {
+    // Refetch members to get fresh data
+    refetchMembers();
+    // Increment refresh key to force re-render
+    setRefreshKey(prev => prev + 1);
+    // Call parent callback
+    onTeamUpdated();
+  };
+
+  // When show members is toggled to true, refetch members
+  useEffect(() => {
+    if (showMembers) {
+      refetchMembers();
+    }
+  }, [showMembers, refetchMembers]);
 
   return (
     <>
@@ -155,7 +173,7 @@ export function TeamItem({ team, onTeamUpdated }: TeamItemProps) {
                 <div className="grid gap-3">
                   {displayMembers.map(member => (
                     <div
-                      key={member.id}
+                      key={`${member.id}-${refreshKey}`}
                       className="flex items-center justify-between p-3 rounded-lg bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700"
                     >
                       <div className="flex items-center space-x-3">
@@ -203,7 +221,7 @@ export function TeamItem({ team, onTeamUpdated }: TeamItemProps) {
           }}
           isOpen={isEditModalOpen}
           onClose={() => setIsEditModalOpen(false)}
-          onTeamUpdated={onTeamUpdated}
+          onTeamUpdated={handleTeamUpdated}
         />
       )}
 
@@ -220,7 +238,7 @@ export function TeamItem({ team, onTeamUpdated }: TeamItemProps) {
           }}
           isOpen={isDeleteModalOpen}
           onClose={() => setIsDeleteModalOpen(false)}
-          onTeamDeleted={onTeamUpdated}
+          onTeamDeleted={handleTeamUpdated}
         />
       )}
     </>
