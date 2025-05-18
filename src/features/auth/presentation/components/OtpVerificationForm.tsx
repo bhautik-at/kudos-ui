@@ -35,6 +35,16 @@ export const OtpVerificationForm = () => {
   const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(false);
 
+  // Get orgId and invite from URL
+  const orgId = router.query.orgId as string | undefined;
+
+  // Store orgId in localStorage when component loads
+  useEffect(() => {
+    if (orgId) {
+      localStorage.setItem('kudos_invite_orgId', orgId);
+    }
+  }, [orgId]);
+
   const form = useForm<OtpFormValues>({
     resolver: zodResolver(otpFormSchema),
     defaultValues: {
@@ -79,8 +89,17 @@ export const OtpVerificationForm = () => {
           localStorage.setItem('kudos_user_id', result.user.id);
         }
 
-        // Simple navigation logic
-        if (isSignup) {
+        // Navigation logic
+        if (orgId) {
+          // If we have an orgId, navigate to dashboard with orgId parameter
+          const dashboardUrl = `/dashboard?orgId=${orgId}`;
+          window.location.href = dashboardUrl;
+
+          // Remove from localStorage after navigation
+          setTimeout(() => {
+            localStorage.removeItem('kudos_invite_orgId');
+          }, 1000);
+        } else if (isSignup) {
           // New user - redirect to organization creation
           window.location.href = '/organization';
         } else {

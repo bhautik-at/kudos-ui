@@ -14,15 +14,33 @@ const HomePage: NextPage = () => {
     // Clear auth token to prevent API calls
     httpService.clearAuthToken();
 
+    // Get query parameters
+    const { orgId, invite } = router.query;
+
     // Check for user ID in localStorage
     if (typeof window !== 'undefined') {
       const userId = localStorage.getItem('kudos_user_id');
+
       if (userId) {
-        // User is already logged in, redirect to dashboard
-        router.replace('/dashboard');
+        // User is already logged in
+        if (orgId) {
+          // If we have an orgId parameter, store it and redirect to dashboard with the orgId
+          router.replace(`/dashboard?orgId=${orgId}`);
+
+          // Clean up localStorage after navigation
+          setTimeout(() => {
+            localStorage.removeItem('kudos_invite_orgId');
+          }, 1000);
+        } else {
+          // No orgId parameter, just redirect to dashboard
+          router.replace('/dashboard');
+        }
+      } else if (orgId) {
+        // User not logged in but has orgId - store it for later use after login
+        localStorage.setItem('kudos_invite_orgId', orgId as string);
       }
     }
-  }, [router]);
+  }, [router, router.query]);
 
   return (
     <>
