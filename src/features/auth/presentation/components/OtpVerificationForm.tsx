@@ -35,12 +35,6 @@ export const OtpVerificationForm = () => {
   const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(false);
 
-  // Get invite code from URL
-  const invite = router.query.invite as string | undefined;
-  const orgId = router.query.orgId as string | undefined;
-  const hasInvite = !!invite;
-  const hasOrgId = !!orgId;
-
   const form = useForm<OtpFormValues>({
     resolver: zodResolver(otpFormSchema),
     defaultValues: {
@@ -85,20 +79,13 @@ export const OtpVerificationForm = () => {
           localStorage.setItem('kudos_user_id', result.user.id);
         }
 
-        // Add a short delay to ensure auth state is updated
-        // and toast is displayed before navigation
-        // If we have invite and orgId parameters, redirect to the dedicated verify-invite route
-        if (hasInvite && hasOrgId && orgId) {
-          router.push(`/verify-invite?orgId=${orgId}${invite ? `&invite=${invite}` : ''}`);
+        // Simple navigation logic
+        if (isSignup) {
+          // New user - redirect to organization creation
+          window.location.href = '/organization';
         } else {
-          // No invite or orgId
-          if (isSignup) {
-            // New user - redirect to organization creation
-            router.push('/organization');
-          } else {
-            // Existing user - redirect to organization selection
-            router.push('/organizations');
-          }
+          // Existing user - redirect to organization selection
+          window.location.href = '/organizations';
         }
       } else {
         toastService.error(`Verification Failed: ${result.message}`);
