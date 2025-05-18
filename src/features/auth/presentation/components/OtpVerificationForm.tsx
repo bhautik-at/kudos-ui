@@ -9,6 +9,7 @@ import { Button } from '@/shared/components/atoms/Button';
 import { Input } from '@/shared/components/atoms/Input';
 import { Label } from '@/shared/components/atoms/Label';
 import { toastService } from '@/shared/services/toast';
+import { AcceptInvitation } from '@/features/users/presentation/components/AcceptInvitation';
 import {
   Form,
   FormControl,
@@ -34,6 +35,8 @@ export const OtpVerificationForm = () => {
   const { setUserFromAuth } = useUser();
   const [cooldownTime, setCooldownTime] = useState<number>(0);
   const [canResend, setCanResend] = useState<boolean>(false);
+  const [showAcceptInvitation, setShowAcceptInvitation] = useState(false);
+  const [verifiedOrgId, setVerifiedOrgId] = useState<string | null>(null);
 
   // Get orgId and invite from URL
   const orgId = router.query.orgId as string | undefined;
@@ -91,14 +94,9 @@ export const OtpVerificationForm = () => {
 
         // Navigation logic
         if (orgId) {
-          // If we have an orgId, navigate to dashboard with orgId parameter
-          const dashboardUrl = `/dashboard?orgId=${orgId}`;
-          window.location.href = dashboardUrl;
-
-          // Remove from localStorage after navigation
-          setTimeout(() => {
-            localStorage.removeItem('kudos_invite_orgId');
-          }, 1000);
+          // If we have an orgId, show the invitation acceptance screen
+          setVerifiedOrgId(orgId);
+          setShowAcceptInvitation(true);
         } else if (isSignup) {
           // New user - redirect to organization creation
           window.location.href = '/organization';
@@ -141,6 +139,35 @@ export const OtpVerificationForm = () => {
       setCanResend(true);
     }
   };
+
+  const handleInvitationSuccess = (orgId: string) => {
+    // Redirect to dashboard with the orgId parameter after successful acceptance
+    window.location.href = `/dashboard?orgId=${orgId}`;
+
+    // Clean up localStorage
+    localStorage.removeItem('kudos_invite_orgId');
+  };
+
+  const handleInvitationError = () => {
+    // If invitation acceptance fails, go back to regular navigation
+    if (isSignup) {
+      window.location.href = '/organization';
+    } else {
+      window.location.href = '/organizations';
+    }
+  };
+
+  if (showAcceptInvitation && verifiedOrgId) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <AcceptInvitation
+          organizationId={verifiedOrgId}
+          onSuccess={handleInvitationSuccess}
+          onError={handleInvitationError}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
