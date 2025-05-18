@@ -53,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ className, isMobile = false, o
     { icon: Home, label: 'User Management', href: '/user-management' },
     { icon: Tag, label: 'Kudo Categories', href: '/kudo-categories' },
     { icon: Users, label: 'Teams', href: '/teams' },
-    { icon: BarChart, label: 'Analytics', href: '/dashboard/analytics' },
+    { icon: BarChart, label: 'Analytics', href: '/analytics' },
   ];
 
   // On mobile, we don't collapse - we just show the full sidebar
