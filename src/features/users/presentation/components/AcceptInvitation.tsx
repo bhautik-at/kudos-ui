@@ -58,7 +58,7 @@ export const AcceptInvitation = ({
 
     if (result.success) {
       // Redirect to organization page or dashboard on success
-      router.push(`/organizations/${result.organizationId}`);
+      router.push(`/dashboard?orgId=${result.organizationId}`);
     }
   };
 

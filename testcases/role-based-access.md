@@ -1,11 +1,13 @@
 # Role-Based Access Control Test Cases
 
 ## Feature: Role-Based Access Control with Unified Dashboard
+
 As a user
 I want to access a shared dashboard where my experience changes based on my role
 So that I can access only the features appropriate to my assigned role
 
 ## Background
+
 Given I am logged in to the platform
 And I am on the dashboard page
 
@@ -14,6 +16,7 @@ And I am on the dashboard page
 ### 1. Team Member Dashboard Tests
 
 #### 1.1 Basic Access
+
 ```gherkin
 Scenario: Team member dashboard view
   Given I am logged in as a Team Member
@@ -31,6 +34,7 @@ Scenario: Team member restricted access
 ```
 
 #### 1.2 Team Member Features
+
 ```gherkin
 Scenario: Team member kudos interaction
   Given I am logged in as a Team Member
@@ -46,6 +50,7 @@ Scenario: Team member kudos interaction
 ### 2. Tech Lead Dashboard Tests
 
 #### 2.1 Basic Access
+
 ```gherkin
 Scenario: Tech Lead dashboard view
   Given I am logged in as a Tech Lead
@@ -64,6 +69,7 @@ Scenario: Tech Lead full access
 ```
 
 #### 2.2 Tech Lead Features
+
 ```gherkin
 Scenario: Tech Lead organization management
   Given I am logged in as a Tech Lead
@@ -75,34 +81,10 @@ Scenario: Tech Lead organization management
   And I should be able to configure organization settings
 ```
 
-### 3. Shared Dashboard Experience
+### 3. Role Transition Tests
 
-#### 3.1 Common Elements
-```gherkin
-Scenario: Common dashboard elements
-  Given I am logged in to the platform
-  When I access the dashboard
-  Then I should see the common header with user profile
-  And I should see the navigation menu
-  And I should see the kudos feed section
-  And I should see the notifications area
-  And I should see the search functionality
-  And I should see the help/support section
-```
+#### 3.1 Role Upgrade
 
-#### 3.2 Dynamic Content
-```gherkin
-Scenario: Role-based content loading
-  Given I am logged in to the platform
-  When I access the dashboard
-  Then the system should load role-specific content
-  And the system should cache common elements
-  And the system should maintain consistent layout
-```
-
-### 4. Role Transition Tests
-
-#### 4.1 Role Upgrade
 ```gherkin
 Scenario: Team member upgraded to Tech Lead
   Given I am logged in as a Team Member
@@ -115,7 +97,8 @@ Scenario: Team member upgraded to Tech Lead
   Then all new permissions should persist
 ```
 
-#### 4.2 Role Downgrade
+#### 3.2 Role Downgrade
+
 ```gherkin
 Scenario: Tech Lead downgraded to Team Member
   Given I am logged in as a Tech Lead
@@ -128,9 +111,10 @@ Scenario: Tech Lead downgraded to Team Member
   Then all restricted permissions should persist
 ```
 
-### 5. Dual Role Tests
+### 4. Dual Role Tests
 
-#### 5.1 Tech Lead as Team Member
+#### 4.1 Tech Lead as Team Member
+
 ```gherkin
 Scenario: Tech Lead viewing team member features
   Given I am logged in as a Tech Lead
@@ -153,7 +137,8 @@ Scenario: Tech Lead participating as team member
   And I should see the same view as other team members
 ```
 
-#### 5.2 Role Switching
+#### 4.2 Role Switching
+
 ```gherkin
 Scenario: Switching between Tech Lead and Team Member views
   Given I am logged in as a Tech Lead
@@ -175,7 +160,8 @@ Scenario: Role-specific actions in different views
   And I should be able to perform Tech Lead tasks
 ```
 
-#### 5.3 Data Separation
+#### 4.3 Data Separation
+
 ```gherkin
 Scenario: Separate data views for different roles
   Given I am logged in as a Tech Lead
@@ -198,7 +184,8 @@ Scenario: Role-specific notifications
   And I should see management alerts
 ```
 
-#### 5.4 Permission Management
+#### 4.4 Permission Management
+
 ```gherkin
 Scenario: Role-based permission enforcement
   Given I am logged in as a Tech Lead
@@ -221,27 +208,26 @@ Scenario: Cross-role data access
 ```
 
 ## Test Coverage Summary
+
 1. Team Member Dashboard
+
    - Basic access restrictions
    - Available features
    - Restricted features
 
 2. Tech Lead Dashboard
+
    - Full access capabilities
    - Management features
    - Organization settings
 
-3. Shared Dashboard Experience
-   - Common elements
-   - Dynamic content loading
-   - Consistent layout
+3. Role Transitions
 
-4. Role Transitions
    - Role upgrade flow
    - Role downgrade flow
    - Permission persistence
 
-5. Dual Role Tests
+4. Dual Role Tests
    - Tech Lead as Team Member view
    - Role switching functionality
    - Data separation between roles
@@ -249,24 +235,26 @@ Scenario: Cross-role data access
    - Cross-role data access
 
 ## Dashboard Features Matrix
-| Feature | Tech Lead | Team Member | Common |
-|---------|-----------|-------------|---------|
-| Header | ✅ | ✅ | ✅ |
-| Navigation | Role-specific | Role-specific | ✅ |
-| Kudos Feed | Full access | View only | ✅ |
-| Notifications | All types | Limited | ✅ |
-| Search | Advanced | Basic | ✅ |
-| Quick Actions | All | Limited | ✅ |
-| Statistics | Detailed | Summary | ✅ |
-| Settings | Full | Limited | ✅ |
-| Widgets | All | Limited | ✅ |
+
+| Feature       | Tech Lead     | Team Member   | Common |
+| ------------- | ------------- | ------------- | ------ |
+| Header        | ✅            | ✅            | ✅     |
+| Navigation    | Role-specific | Role-specific | ✅     |
+| Kudos Feed    | Full access   | View only     | ✅     |
+| Notifications | All types     | Limited       | ✅     |
+| Search        | Advanced      | Basic         | ✅     |
+| Quick Actions | All           | Limited       | ✅     |
+| Statistics    | Detailed      | Summary       | ✅     |
+| Settings      | Full          | Limited       | ✅     |
+| Widgets       | All           | Limited       | ✅     |
 
 ## Role Capabilities Matrix
-| Feature | Tech Lead View | Team Member View | Common |
-|---------|---------------|------------------|---------|
-| Team Kudos | All teams | Own team only | ✅ |
-| Management | Full access | No access | ✅ |
-| Statistics | Organization-wide | Team-level | ✅ |
-| Notifications | All types | Team only | ✅ |
-| Settings | Full access | View only | ✅ |
-| Activities | All teams | Own team | ✅ | 
+
+| Feature       | Tech Lead View    | Team Member View | Common |
+| ------------- | ----------------- | ---------------- | ------ |
+| Team Kudos    | All teams         | Own team only    | ✅     |
+| Management    | Full access       | No access        | ✅     |
+| Statistics    | Organization-wide | Team-level       | ✅     |
+| Notifications | All types         | Team only        | ✅     |
+| Settings      | Full access       | View only        | ✅     |
+| Activities    | All teams         | Own team         | ✅     |

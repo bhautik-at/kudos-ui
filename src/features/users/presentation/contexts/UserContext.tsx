@@ -34,6 +34,7 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
   const toast = useToast();
   const router = useRouter();
   const isServer = typeof window === 'undefined';
+  const orgId = router.query.orgId as string | undefined;
 
   // Helper function to check if we're on an auth page
   const isAuthPage = (): boolean => {
@@ -61,9 +62,9 @@ export const UserProvider = ({ children }: { children: ReactNode }) => {
     if (!isServer && !isLoading) {
       const storedUserId = localStorage.getItem(USER_ID_STORAGE_KEY);
 
-      if (storedUserId && isAuthPage()) {
+      if (storedUserId && isAuthPage() && !orgId) {
         // User is authenticated but on an auth page, redirect to dashboard
-        router.replace('/dashboard');
+        router.replace(`/dashboard?orgId=${orgId}`);
       }
     }
   }, [router.pathname, isLoading, user]);
