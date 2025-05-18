@@ -1,4 +1,4 @@
-import { Configuration, OpenAIApi } from 'openai';
+import OpenAI from 'openai';
 
 const CATEGORIES = [
   'Technical Excellence',
@@ -10,17 +10,16 @@ const CATEGORIES = [
   'Quality Focus',
   'Mentorship',
   'Initiative',
-  'Collaboration'
+  'Collaboration',
 ] as const;
 
-export type KudoCategory = typeof CATEGORIES[number];
+export type KudoCategory = (typeof CATEGORIES)[number];
 
 export class AICategoryService {
-  private openai: OpenAIApi;
+  private openai: OpenAI;
 
   constructor(apiKey: string) {
-    const configuration = new Configuration({ apiKey });
-    this.openai = new OpenAIApi(configuration);
+    this.openai = new OpenAI({ apiKey });
   }
 
   async suggestCategory(message: string): Promise<KudoCategory> {
@@ -31,15 +30,15 @@ export class AICategoryService {
       
       Return only the category name, nothing else.`;
 
-      const response = await this.openai.createChatCompletion({
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: prompt }],
+      const response = await this.openai.chat.completions.create({
+        model: 'gpt-3.5-turbo',
+        messages: [{ role: 'user', content: prompt }],
         temperature: 0.3,
         max_tokens: 20,
       });
 
-      const suggestedCategory = response.data.choices[0]?.message?.content?.trim() as KudoCategory;
-      
+      const suggestedCategory = response.choices[0]?.message?.content?.trim() as KudoCategory;
+
       if (!CATEGORIES.includes(suggestedCategory as any)) {
         return 'Team Player'; // Default fallback
       }
@@ -56,4 +55,6 @@ export class AICategoryService {
   }
 }
 
-export const aiCategoryService = new AICategoryService(process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''); 
+export const aiCategoryService = new AICategoryService(
+  process.env.NEXT_PUBLIC_OPENAI_API_KEY || ''
+);
