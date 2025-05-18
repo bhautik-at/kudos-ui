@@ -9,22 +9,65 @@ import { GetAllKudoCategoriesUseCase } from '../../application/useCases/GetAllKu
 import { GetKudoCategoryByIdUseCase } from '../../application/useCases/GetKudoCategoryByIdUseCase';
 import { UpdateKudoCategoryUseCase } from '../../application/useCases/UpdateKudoCategoryUseCase';
 import { DeleteKudoCategoryUseCase } from '../../application/useCases/DeleteKudoCategoryUseCase';
+import { httpService } from '@/shared/services/http/HttpService';
+
+// Static data for categories as a fallback
+const STATIC_CATEGORIES: KudoCategoryOutputDto[] = [
+  {
+    id: '1',
+    name: 'Teamwork',
+    organizationId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '2',
+    name: 'Innovation',
+    organizationId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '3',
+    name: 'Leadership',
+    organizationId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '4',
+    name: 'Problem Solving',
+    organizationId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '5',
+    name: 'Customer Focus',
+    organizationId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: '6',
+    name: 'Quality',
+    organizationId: '',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
 
 export const useKudoCategories = (organizationId: string) => {
-  const [categories, setCategories] = useState<KudoCategoryOutputDto[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [categories, setCategories] = useState<KudoCategoryOutputDto[]>(STATIC_CATEGORIES);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<Error | null>(null);
   const isMounted = useRef(false);
-  const httpServiceRef = useRef<HttpService | null>(null);
 
-  // Initialize HTTP service only once to prevent re-creating on each render
-  if (!httpServiceRef.current) {
-    httpServiceRef.current = new HttpService();
-  }
-
-  const httpService = httpServiceRef.current;
-  const categoryRepository = KudoCategoryInfrastructureFactory.createRepository(httpService);
-  const categoryValidator = KudoCategoryInfrastructureFactory.createValidator(httpService);
+  // Use a ref to store repository and validator instances to prevent recreating on each render
+  const repoRef = useRef({
+    repository: KudoCategoryInfrastructureFactory.createRepository(httpService),
+    validator: KudoCategoryInfrastructureFactory.createValidator(httpService),
+  });
 
   const fetchCategories = useCallback(async () => {
     // Skip fetching if organizationId is not provided
@@ -36,15 +79,29 @@ export const useKudoCategories = (organizationId: string) => {
     setIsLoading(true);
     setError(null);
     try {
-      const getAllCategoriesUseCase = new GetAllKudoCategoriesUseCase(categoryRepository);
+      const getAllCategoriesUseCase = new GetAllKudoCategoriesUseCase(repoRef.current.repository);
       const categoriesData = await getAllCategoriesUseCase.execute(organizationId);
-      setCategories(categoriesData);
+
+      if (isMounted.current) {
+        setCategories(categoriesData);
+      }
     } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
+      // If we fail to load categories, update the static ones with the organization ID
+      const staticWithOrgId = STATIC_CATEGORIES.map(cat => ({
+        ...cat,
+        organizationId,
+      }));
+
+      if (isMounted.current) {
+        setCategories(staticWithOrgId);
+        setError(err instanceof Error ? err : new Error(String(err)));
+      }
     } finally {
-      setIsLoading(false);
+      if (isMounted.current) {
+        setIsLoading(false);
+      }
     }
-  }, [organizationId, categoryRepository]);
+  }, [organizationId]);
 
   const createCategory = useCallback(
     async (name: string) => {
@@ -53,8 +110,8 @@ export const useKudoCategories = (organizationId: string) => {
       setError(null);
       try {
         const createCategoryUseCase = new CreateKudoCategoryUseCase(
-          categoryRepository,
-          categoryValidator
+          repoRef.current.repository,
+          repoRef.current.validator
         );
         const categoryDto: CreateKudoCategoryInputDto = {
           name,
@@ -68,7 +125,7 @@ export const useKudoCategories = (organizationId: string) => {
         return false;
       }
     },
-    [organizationId, categoryRepository, categoryValidator, fetchCategories]
+    [organizationId, fetchCategories]
   );
 
   const updateCategory = useCallback(
@@ -78,8 +135,8 @@ export const useKudoCategories = (organizationId: string) => {
       setError(null);
       try {
         const updateCategoryUseCase = new UpdateKudoCategoryUseCase(
-          categoryRepository,
-          categoryValidator
+          repoRef.current.repository,
+          repoRef.current.validator
         );
         const categoryDto: UpdateKudoCategoryInputDto = {
           name,
@@ -92,7 +149,7 @@ export const useKudoCategories = (organizationId: string) => {
         return false;
       }
     },
-    [organizationId, categoryRepository, categoryValidator, fetchCategories]
+    [organizationId, fetchCategories]
   );
 
   const deleteCategory = useCallback(
@@ -101,7 +158,7 @@ export const useKudoCategories = (organizationId: string) => {
 
       setError(null);
       try {
-        const deleteCategoryUseCase = new DeleteKudoCategoryUseCase(categoryRepository);
+        const deleteCategoryUseCase = new DeleteKudoCategoryUseCase(repoRef.current.repository);
         await deleteCategoryUseCase.execute(id, organizationId);
         await fetchCategories(); // Refresh the list
         return true;
@@ -110,7 +167,7 @@ export const useKudoCategories = (organizationId: string) => {
         return false;
       }
     },
-    [organizationId, categoryRepository, fetchCategories]
+    [organizationId, fetchCategories]
   );
 
   const getCategory = useCallback(
@@ -119,28 +176,39 @@ export const useKudoCategories = (organizationId: string) => {
 
       setError(null);
       try {
-        const getCategoryUseCase = new GetKudoCategoryByIdUseCase(categoryRepository);
+        const getCategoryUseCase = new GetKudoCategoryByIdUseCase(repoRef.current.repository);
         return await getCategoryUseCase.execute(id, organizationId);
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)));
         return null;
       }
     },
-    [organizationId, categoryRepository]
+    [organizationId]
   );
 
   // Load categories on mount and when organizationId changes
   useEffect(() => {
     // Skip initial fetch if organizationId is not set
     if (!organizationId) {
+      // Update the static categories with empty organization IDs
+      setCategories(STATIC_CATEGORIES);
       setIsLoading(false);
       return;
     }
 
-    // Only fetch on the client side and when component is mounted
+    // Only fetch on the client side
     if (typeof window !== 'undefined') {
       // Set mounted flag
       isMounted.current = true;
+
+      // Update the static categories with the correct organization ID
+      const staticWithOrgId = STATIC_CATEGORIES.map(cat => ({
+        ...cat,
+        organizationId,
+      }));
+      setCategories(staticWithOrgId);
+
+      // Attempt to fetch real categories (will fall back to static if it fails)
       fetchCategories();
     }
 
