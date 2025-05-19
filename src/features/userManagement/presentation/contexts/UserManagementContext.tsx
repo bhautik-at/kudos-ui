@@ -43,7 +43,7 @@ const UserManagementContext = createContext<UserManagementContextType | undefine
 export const UserManagementProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const router = useRouter();
   const { orgId } = router.query;
-  const organizationId = Array.isArray(orgId) ? orgId[0] : orgId;
+  const organizationId = orgId as string;
   const [isRouterReady, setIsRouterReady] = useState(false);
 
   // Create repository and use cases only once using refs
